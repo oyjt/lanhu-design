@@ -1,6 +1,6 @@
 ---
 name: lanhu-design
-description: "Use this skill when Codex needs to work with Lanhu UI design drafts: get UI design image lists, analyze UI design images, read design HTML/CSS specs, extract design tokens, get slice/icon/asset download information, batch download slices, or implement UI from Lanhu design handoff. Trigger on Chinese or English requests mentioning 蓝湖, Lanhu, UI设计稿, 设计图, 视觉稿, 切图, 图标, 素材, design handoff, design slices, or Lanhu design tools."
+description: "Use this skill when working with Lanhu UI design drafts: get UI design image lists, analyze UI design images, read design HTML/CSS specs, extract design tokens, get slice/icon/asset download information, batch download slices, or implement UI from Lanhu design handoff. Trigger on Chinese or English requests mentioning 蓝湖, Lanhu, UI设计稿, 设计图, 视觉稿, 切图, 图标, 素材, design handoff, design slices, or Lanhu design tools."
 ---
 
 # Lanhu Design

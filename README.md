@@ -19,9 +19,90 @@ npx skills add oyjt/lanhu-design
 2. 按 `F12`（macOS 为 `Cmd+Option+I`）打开开发者工具，切换到 **Network** 标签页。
 3. 刷新页面，点击任意 `lanhuapp.com` 请求。
 4. 在 Request Headers 中找到 `Cookie` 字段，复制完整值。
-5. 将该值设置为 `LANHU_COOKIE` 环境变量。
+5. 将该值设置为 `LANHU_COOKIE` 环境变量（见下方说明）。
 
 > Cookie 通常数天到数周会过期，出现认证错误时需重新获取。
+
+### 设置环境变量
+
+复制到 Cookie 后，根据你使用的工具选择对应的配置方式：
+
+#### Claude Code
+
+编辑项目根目录下的 `.claude/settings.json`（没有则新建），添加：
+
+```json
+{
+  "env": {
+    "LANHU_COOKIE": "你复制的Cookie值"
+  }
+}
+```
+
+#### Codex CLI
+
+在终端设置好环境变量后启动 Codex，它会自动继承当前 shell 的环境变量：
+
+```bash
+export LANHU_COOKIE="你复制的Cookie值"
+codex
+```
+
+如需持久化，可在 `~/.codex/config.toml` 中确保该变量被传递给子进程：
+
+```toml
+[shell_environment_policy]
+inherit = "core"
+includes = ["LANHU_COOKIE"]
+```
+
+#### Cursor
+
+打开 Cursor 设置（`Cmd/Ctrl + ,`），搜索 `terminal.integrated.env`，在对应操作系统的配置中添加：
+
+```json
+{
+  "terminal.integrated.env.osx": {
+    "LANHU_COOKIE": "你复制的Cookie值"
+  },
+  "terminal.integrated.env.windows": {
+    "LANHU_COOKIE": "你复制的Cookie值"
+  },
+  "terminal.integrated.env.linux": {
+    "LANHU_COOKIE": "你复制的Cookie值"
+  }
+}
+```
+
+或者在项目根目录创建 `.env` 文件（如果你的项目支持 dotenv）：
+
+```
+LANHU_COOKIE=你复制的Cookie值
+```
+
+#### 终端直接设置（临时生效）
+
+**macOS / Linux：**
+
+```bash
+export LANHU_COOKIE="你复制的Cookie值"
+```
+
+如需每次打开终端自动生效，将上面这行追加到 `~/.bashrc` 或 `~/.zshrc` 文件末尾。
+
+**Windows CMD：**
+
+```cmd
+set LANHU_COOKIE=你复制的Cookie值
+```
+
+**Windows PowerShell：**
+
+```powershell
+$env:LANHU_COOKIE="你复制的Cookie值"
+```
+
+> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。建议将包含 Cookie 的文件（如 `.env`、`.claude/settings.json`）加入 `.gitignore`。
 
 ## 功能说明
 
@@ -42,6 +123,47 @@ npx skills add oyjt/lanhu-design
 5. 批量下载切图       → download_slices.mjs slices.json --output ./src/assets --scale 2x
 ```
 
+## 使用示例
+
+### 查看设计图列表
+
+```
+帮我看看这个蓝湖项目有哪些设计图：
+https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx
+```
+
+AI 会调用 `get_designs.mjs` 列出项目中所有设计图的名称、尺寸和更新时间。
+
+### 分析设计稿
+
+```
+帮我分析"首页设计"这张设计图，我需要还原它的 UI
+```
+
+AI 会自动下载设计图原图并进行视觉分析，提取颜色、字体、间距、圆角等参数，结合设计规格辅助 UI 还原。
+
+### 批量下载切图
+
+```
+帮我下载"首页设计"的所有切图
+```
+
+AI 会自动：
+
+- 获取该设计图的全部切图/图标/素材元数据
+- 检测项目类型（React/Vue/Flutter 等），选择合适的输出目录
+- 确认平台和倍率（默认推荐 Web 2x）
+- 生成语义化文件名并批量下载
+- 汇报下载结果（成功数、失败数、输出路径）
+
+### 指定平台和倍率下载
+
+```
+把"登录页"的切图按 iOS 三套倍率下载到 Assets.xcassets 目录
+```
+
+支持 Web（1x/2x/3x）、iOS（ios-all）、Android（android-all）等多平台倍率，自动按平台规范组织目录结构。
+
 ## 支持的平台与倍率
 
 | 平台 | 倍率参数 |
@@ -53,6 +175,10 @@ npx skills add oyjt/lanhu-design
 ## 兼容性
 
 本技能遵循 [Agent Skills](https://github.com/vercel-labs/skills) 开放标准，可在 Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot 等兼容的 AI 编码助手中使用。
+
+## 致谢
+
+本项目基于 [lanhu-mcp](https://github.com/dsphper/lanhu-mcp) 开发，感谢原作者对蓝湖 API 逆向工程和 MCP 工具链的开拓性工作。
 
 ## 许可证
 
