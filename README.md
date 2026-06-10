@@ -109,6 +109,7 @@ $env:LANHU_COOKIE="你复制的Cookie值"
 | 脚本 | 用途 |
 |------|------|
 | `get_designs.mjs` | 列出蓝湖项目的所有设计图 |
+| `get_design_specs.mjs` | 提取设计规格 HTML+CSS、Design Tokens，并可自动下载页面图片 |
 | `download_design_images.mjs` | 下载设计图原图用于视觉分析 |
 | `get_design_slices.mjs` | 获取单个设计图的切图/素材元数据 |
 | `download_slices.mjs` | 根据元数据 JSON 批量下载切图 |
@@ -119,8 +120,9 @@ $env:LANHU_COOKIE="你复制的Cookie值"
 1. 设置 LANHU_COOKIE
 2. 获取设计图列表     → get_designs.mjs <蓝湖链接>
 3. 下载设计图原图     → download_design_images.mjs <链接> --designs 1,2 --output ./tmp
-4. 获取切图元数据     → get_design_slices.mjs <链接> --design "首页设计"
-5. 批量下载切图       → download_slices.mjs slices.json --output ./src/assets --scale 2x
+4. 提取设计规格       → get_design_specs.mjs <链接> --design "首页设计" --output ./tmp --download-images
+5. 获取切图元数据     → get_design_slices.mjs <链接> --design "首页设计"
+6. 批量下载切图       → download_slices.mjs slices.json --output ./src/assets --scale 2x
 ```
 
 ## 使用示例
@@ -134,13 +136,20 @@ https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx
 
 AI 会调用 `get_designs.mjs` 列出项目中所有设计图的名称、尺寸和更新时间。
 
-### 分析设计稿
+### 分析与还原设计稿
 
 ```
 帮我分析"首页设计"这张设计图，我需要还原它的 UI
 ```
 
-AI 会自动下载设计图原图并进行视觉分析，提取颜色、字体、间距、圆角等参数，结合设计规格辅助 UI 还原。
+AI 会自动：
+
+- 下载设计图原图并进行视觉分析
+- 调用 `get_design_specs.mjs` 提取精确的 HTML+CSS 规格和 Design Tokens（颜色、字体、间距、圆角、渐变、阴影等），并把页面引用的图片下载到本地
+- 检测项目框架（React/Vue/Flutter 等），生成匹配的代码，CSS 值直接复用规格、不主观改动
+- 逐项核对还原结果与设计规格
+
+> 蓝湖设计稿有两种数据来源：DDS Schema（高保真，HTML+CSS 为权威）和 Sketch/Figma 标注（降级，以原图视觉 + Design Tokens 数值为主）。`get_design_specs.mjs` 会自动选择来源并在输出中标注，AI 据此调整还原策略。
 
 ### 批量下载切图
 
