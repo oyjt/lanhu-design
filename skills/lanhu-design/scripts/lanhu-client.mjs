@@ -284,6 +284,7 @@ export async function getDesignSlicesInfo(
   const sketchData = await requestJson(jsonUrl);
 
   const slices = [];
+  const seenSlices = new Set();
 
   function findDdsImages(obj, parentName = "", layerPath = "") {
     if (!obj || typeof obj !== "object") return;
@@ -324,7 +325,13 @@ export async function getDesignSlicesInfo(
         if (Object.keys(metadata).length > 0) sliceInfo.metadata = metadata;
       }
 
-      slices.push(sliceInfo);
+      const sliceKey = obj.id
+        ? `id:${obj.id}`
+        : `${obj.ddsImage.imageUrl}|${currentPath}`;
+      if (!seenSlices.has(sliceKey)) {
+        seenSlices.add(sliceKey);
+        slices.push(sliceInfo);
+      }
     }
 
     if (Array.isArray(obj.layers)) {
@@ -334,6 +341,7 @@ export async function getDesignSlicesInfo(
     }
 
     for (const value of Object.values(obj)) {
+      if (value === obj.layers || value === obj.ddsImage) continue;
       if (typeof value === "object" && value !== null && value !== obj) {
         if (Array.isArray(value)) {
           for (const item of value) {

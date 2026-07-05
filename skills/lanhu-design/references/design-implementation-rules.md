@@ -207,6 +207,7 @@ layer_path: "NavigationBar/SearchIcon"
 
 - 用户不指定时推荐 **Web 2x**（通常是原始高质量图）。
 - 必须明确告知用户当前选择的倍率，即使使用默认值。
+- 多倍率下载必须使用切图 JSON 中的真实 `scale_urls`。缺少对应 URL 时不要用 `download_url` 复制出多份文件。
 
 ### 各平台倍率对照
 

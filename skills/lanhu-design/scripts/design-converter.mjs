@@ -147,6 +147,36 @@ function camelToKebab(s) {
   return s.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`);
 }
 
+const HTML_ENTITIES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  "\"": "&quot;",
+  "'": "&#39;",
+};
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => HTML_ENTITIES[char]);
+}
+
+function unescapeHtml(value) {
+  return String(value ?? "").replace(/&(amp|lt|gt|quot|#39);/g, (match, entity) => {
+    if (entity === "amp") return "&";
+    if (entity === "lt") return "<";
+    if (entity === "gt") return ">";
+    if (entity === "quot") return "\"";
+    if (entity === "#39") return "'";
+    return match;
+  });
+}
+
+function escapeCssUrl(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, "\\\"")
+    .replace(/[\n\r\f]/g, " ");
+}
+
 function formatCssValue(key, value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "number") {
@@ -272,7 +302,7 @@ function generateHtml(node, indent = 2, loopContext = null) {
   const nodeProps = node.props || {};
   let cls = nodeProps.className || "";
   if (loopIndex !== null && cls) cls = `${cls}-${loopIndex}`;
-  const allCls = [cls, ...flexCls].filter(Boolean).join(" ");
+  const allCls = escapeHtml([cls, ...flexCls].filter(Boolean).join(" "));
   const type = node.type;
   const LRE = /^this\.item\.\w+$/;
 
@@ -280,13 +310,13 @@ function generateHtml(node, indent = 2, loopContext = null) {
     let text = node.data?.value || nodeProps.text || "";
     if (loopItem && text && LRE.test(String(text).trim())) text = resolveLoopPlaceholder(text, loopItem);
     else if (text && LRE.test(String(text).trim())) text = "";
-    return `${sp}<span class="${allCls}">${text}</span>`;
+    return `${sp}<span class="${allCls}">${escapeHtml(text)}</span>`;
   }
   if (type === "lanhuimage") {
     let src = node.data?.value || nodeProps.src || "";
     if (loopItem && src && LRE.test(String(src).trim())) src = resolveLoopPlaceholder(src, loopItem);
     else if (src && LRE.test(String(src).trim())) src = "";
-    return `${sp}<img\n${sp}  class="${allCls}"\n${sp}  referrerpolicy="no-referrer"\n${sp}  src="${src}"\n${sp}/>`;
+    return `${sp}<img\n${sp}  class="${allCls}"\n${sp}  referrerpolicy="no-referrer"\n${sp}  src="${escapeHtml(src)}"\n${sp}/>`;
   }
   if (type === "lanhubutton") {
     const ch = (node.children||[]).map(c=>generateHtml(c,indent+2,loopContext)).join("\n");
@@ -601,15 +631,15 @@ function sketchLayersToHtml(layers, scale, indent) {
     }
 
     const css = getSketchLayerCss(layer, scale);
-    const cls = safeCls(layer.name);
-    const styleAttr = css.replace(/"/g, "'");
+    const cls = escapeHtml(safeCls(layer.name));
+    const styleAttr = escapeHtml(css.replace(/"/g, "'"));
     if (isImageLayer(layer)) {
       // 图片层整体已被导出为一张切片图，用 image.imageUrl，不再递归子层。
       const src = getImageSrc(layer);
-      parts.push(`${sp}<img class="${cls}" referrerpolicy="no-referrer" src="${src}" style="${styleAttr}" />`);
+      parts.push(`${sp}<img class="${cls}" referrerpolicy="no-referrer" src="${escapeHtml(src)}" style="${styleAttr}" />`);
     } else if (isTextLayer(layer)) {
       const text = getTextContent(layer);
-      parts.push(`${sp}<span class="${cls}" style="${styleAttr}">${text}</span>`);
+      parts.push(`${sp}<span class="${cls}" style="${styleAttr}">${escapeHtml(text)}</span>`);
     } else {
       // 有样式的非容器层（含带子层的非 skip 类型）：渲染自身 + 递归子层（子层同为绝对坐标，平级排列）。
       const inner = hasChildren ? sketchLayersToHtml(layer.layers, scale, indent) : "";
@@ -633,7 +663,7 @@ export function convertSketchToHtml(sketchData, designScale, designImgUrl) {
   }
   const body = sketchLayersToHtml(layers, sc, 4);
   const bgStyle = designImgUrl
-    ? `background-image: url('${designImgUrl}'); background-size: cover;`
+    ? `background-image: url("${escapeCssUrl(designImgUrl)}"); background-size: cover;`
     : "background: #f0f0f0;";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -715,7 +745,8 @@ export function localizeImageUrls(htmlCode, designName) {
   const safeDesign = String(designName || "design").replace(/[^A-Za-z0-9_-]/g, "_");
   const mapping = {};
   const counter = {};
-  const result = htmlCode.replace(/src="(https?:\/\/[^"]+)"/g, (match, url) => {
+  const result = htmlCode.replace(/src="(https?:\/\/[^"]+)"/g, (match, encodedUrl) => {
+    const url = unescapeHtml(encodedUrl);
     let ext = ".png";
     try { const u = new URL(url); const e = u.pathname.split(".").pop().toLowerCase(); if (["png","jpg","jpeg","webp","gif","svg"].includes(e)) ext = `.${e}`; } catch {}
     const urlKey = url.split("?")[0].split("/").pop().replace(/[^A-Za-z0-9._-]/g, "_") || "img";
@@ -724,8 +755,7 @@ export function localizeImageUrls(htmlCode, designName) {
     const localName = counter[stem] > 1 ? `${stem}_${counter[stem]}${ext}` : `${stem}${ext}`;
     const localPath = `./assets/slices/${localName}`;
     mapping[localPath] = url;
-    return `src="${localPath}"`;
+    return `src="${escapeHtml(localPath)}"`;
   });
   return { html: result, mapping };
 }
-

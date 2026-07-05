@@ -33,6 +33,11 @@ const SINGLE_SCALE_SUFFIX = {
   android_xxxhdpi: "",
 };
 
+const VALID_SCALES = new Set([
+  ...Object.keys(SINGLE_SCALE_SUFFIX),
+  ...Object.keys(SCALE_GROUPS),
+]);
+
 function usage() {
   return `usage: node scripts/download_slices.mjs <json_file> --output <dir> [--scale 2x] [--name-map names.json] [--referer https://lanhuapp.com/] [--retries 2]
 
@@ -74,6 +79,9 @@ function parseArgs(argv) {
   args.jsonFile = positionals[0] || "";
   if (!Number.isInteger(args.retries) || args.retries < 0) {
     throw new Error("--retries must be a non-negative integer.");
+  }
+  if (!VALID_SCALES.has(args.scale)) {
+    throw new Error(`--scale must be one of: ${Array.from(VALID_SCALES).join(", ")}`);
   }
   return args;
 }
@@ -156,9 +164,6 @@ function urlForScale(item, scale) {
     : {};
   if (scaleUrls[scale]) return String(scaleUrls[scale]);
   if (scale === "2x" && item.download_url) return String(item.download_url);
-  if (Object.keys(scaleUrls).length === 0 && item.download_url) {
-    return String(item.download_url);
-  }
   return "";
 }
 
@@ -263,6 +268,11 @@ async function main() {
       planned.push({ ...target, label });
     }
   });
+  if (planned.length === 0) {
+    console.error(`No downloadable URLs found for scale "${args.scale}".`);
+    console.error("This scale requires scale_urls in the slices JSON; download_url only maps to 2x.");
+    return 2;
+  }
 
   const failures = [];
   for (let index = 0; index < planned.length; index += 1) {

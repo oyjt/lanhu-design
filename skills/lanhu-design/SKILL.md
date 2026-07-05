@@ -56,7 +56,7 @@ description: "Use this skill when working with Lanhu UI design drafts: get UI de
    - 返回的 `source_guidance` 字段是针对当前 `source` 的数据权威性指引，直接按它执行。
    - 加 `--output <dir> --download-images` 可在保存 HTML 的同时自动把引用图片下载到 `<dir>/assets/slices/`，使保存的 HTML 可直接在浏览器渲染核对。
 5. 下载切图、图标、图片素材时，运行 `node scripts/get_design_slices.mjs <url> --design <name>` 获取切图 JSON。单次只传一个设计图名称或序号。
-6. 下载前确认平台和倍率偏好。用户不指定时推荐 Web 2x，但仍要明确说明选择；常用键包括 `1x`、`2x`、`3x`、`ios_1x`、`ios_2x`、`ios_3x`、`android_mdpi`、`android_hdpi`、`android_xhdpi`、`android_xxhdpi`、`android_xxxhdpi`。
+6. 下载前确认平台和倍率偏好。用户不指定时推荐 Web 2x，但仍要明确说明选择；常用键包括 `1x`、`2x`、`3x`、`ios_1x`、`ios_2x`、`ios_3x`、`android_mdpi`、`android_hdpi`、`android_xhdpi`、`android_xxhdpi`、`android_xxxhdpi`。除 `2x` 可回退到 `download_url` 外，其它倍率必须由切图 JSON 的 `scale_urls` 提供，不要复制同一文件伪造成多倍率资源。
 7. 将步骤 5 的切图 JSON 输出保存为文件，然后运行 `node scripts/download_slices.mjs <json_file> --output <dir> --scale <scale>` 批量下载。识别当前项目资源目录和命名风格，执行后核对文件数量和失败列表。
 
 ## 设计还原规则
@@ -128,6 +128,7 @@ node scripts/download_slices.mjs slices.json --output ./src/assets/images/slices
 - `--referer https://lanhuapp.com/`：需要带 Referer 时使用。
 
 脚本只负责稳定下载和基础去重。语义化命名应优先结合当前项目已有命名规范处理。
+全套倍率依赖 `scale_urls` 中的真实多倍率地址；缺失时脚本会报错而不是复制 `download_url`。
 
 ### 切图下载前置步骤
 

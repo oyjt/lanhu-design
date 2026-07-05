@@ -5,8 +5,10 @@
 ## 安装
 
 ```bash
-npx skills add oyjt/lanhu-design
+npx skills add oyjt/lanhu-design/skills/lanhu-design
 ```
+
+技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
 
 ## 前置条件
 
@@ -102,9 +104,11 @@ set LANHU_COOKIE=你复制的Cookie值
 $env:LANHU_COOKIE="你复制的Cookie值"
 ```
 
-> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。建议将包含 Cookie 的文件（如 `.env`、`.claude/settings.json`）加入 `.gitignore`。
+> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。本仓库默认忽略 `.env` 和 `.claude/settings.json`。
 
 ## 功能说明
+
+以下脚本位于 `skills/lanhu-design/scripts/`：
 
 | 脚本 | 用途 |
 |------|------|
@@ -118,11 +122,11 @@ $env:LANHU_COOKIE="你复制的Cookie值"
 
 ```
 1. 设置 LANHU_COOKIE
-2. 获取设计图列表     → get_designs.mjs <蓝湖链接>
-3. 下载设计图原图     → download_design_images.mjs <链接> --designs 1,2 --output ./tmp
-4. 提取设计规格       → get_design_specs.mjs <链接> --design "首页设计" --output ./tmp --download-images
-5. 获取切图元数据     → get_design_slices.mjs <链接> --design "首页设计"
-6. 批量下载切图       → download_slices.mjs slices.json --output ./src/assets --scale 2x
+2. 获取设计图列表     → node skills/lanhu-design/scripts/get_designs.mjs <蓝湖链接>
+3. 下载设计图原图     → node skills/lanhu-design/scripts/download_design_images.mjs <链接> --designs 1,2 --output ./tmp
+4. 提取设计规格       → node skills/lanhu-design/scripts/get_design_specs.mjs <链接> --design "首页设计" --output ./tmp --download-images
+5. 获取切图元数据     → node skills/lanhu-design/scripts/get_design_slices.mjs <链接> --design "首页设计"
+6. 批量下载切图       → node skills/lanhu-design/scripts/download_slices.mjs slices.json --output ./src/assets --scale 2x
 ```
 
 ## 使用示例
@@ -181,9 +185,19 @@ AI 会自动：
 | iOS | `ios_1x`、`ios_2x`、`ios_3x`，或 `ios-all` |
 | Android | `android_mdpi` … `android_xxxhdpi`，或 `android-all` |
 
+> `download_url` 只作为默认 Web 2x 下载源。`1x`、`3x`、`ios-all`、`android-all` 需要切图 JSON 中存在对应的 `scale_urls`，否则脚本会提示缺失，不会复制同一张图片伪造成多倍率资源。
+
 ## 兼容性
 
 本技能遵循 [Agent Skills](https://github.com/vercel-labs/skills) 开放标准，可在 Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot 等兼容的 AI 编码助手中使用。
+
+## 开发校验
+
+```bash
+node --check skills/lanhu-design/scripts/*.mjs tests/*.mjs
+node tests/self_check.mjs
+python3 /Users/ouyang/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/lanhu-design
+```
 
 ## 致谢
 

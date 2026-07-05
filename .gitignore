@@ -2,3 +2,7 @@ node_modules/
 tmp/
 *.log
 .DS_Store
+.env
+.env.*
+!.env.example
+.claude/settings.json

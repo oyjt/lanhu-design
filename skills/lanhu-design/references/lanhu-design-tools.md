@@ -161,6 +161,7 @@ node scripts/get_design_slices.mjs "https://lanhuapp.com/..." --design "首页" 
 - Web：`1x`、`2x`、`3x`。推荐 Web 2x，通常是原始高质量图。
 - iOS：`ios_1x`、`ios_2x`、`ios_3x`，文件命名通常为 `name.png`、`name@2x.png`、`name@3x.png`。
 - Android：`android_mdpi`、`android_hdpi`、`android_xhdpi`、`android_xxhdpi`、`android_xxxhdpi`，分别放入 `mipmap-*` 或项目约定目录。
+- 只有 `2x` 会在缺少 `scale_urls` 时回退到 `download_url`。其它倍率和 `ios-all` / `android-all` 必须依赖真实的 `scale_urls`，不能复制同一 URL 冒充多倍率资源。
 
 下载策略：
 
@@ -201,6 +202,7 @@ node scripts/download_slices.mjs slices.json --output ./app/src/main/res --scale
 ```
 
 脚本会按 `id`、`layer_path`、`name` 依次查找命名映射；没有映射时使用清理后的名称，若名称无法转为安全 ASCII，则使用 `slice_001`。
+当所选倍率没有可下载 URL 时，脚本会返回错误并提示缺少 `scale_urls`。
 
 ## scripts/get_design_specs.mjs
 
