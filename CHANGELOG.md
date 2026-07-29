@@ -2,6 +2,10 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## 1.2.0 - 2026-07-29
+
+- 新增 DESIGN.md 设计系统继承规则：目标项目根目录存在 `DESIGN.md`（或同等职责文档）时，还原代码前必须先读取并遵守其令牌、排版、组件与命名约定；图层级具体数值仍以设计规格为唯一权威，冲突时以规格数值保证当前屏还原度并向用户说明取舍。
+
 ## 1.1.0 - 2026-07-29
 
 - 支持提取 Photoshop 稿切图：设计 JSON 根节点 `type=ps` 时，自动从 `assets[]` 按图层 id 提取 `png_xxxhd`/`svg` 地址（兼容老数据 `isSlice` 和新数据 `isAsset` 标记），并按 PS 稿 @2x 基准推导 Web/iOS/Android 多倍率 `scale_urls`。

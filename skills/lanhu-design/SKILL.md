@@ -108,6 +108,8 @@ HTML 的 class 名称表达布局意图，需转译为目标框架组件，同�
 
 实现 UI 前先检测项目类型（读取 `package.json`、`pubspec.yaml`、`build.gradle`、`Podfile` 等），生成匹配框架的代码（React JSX、Vue SFC、Flutter Widget、SwiftUI View、Android Compose 等）。CSS 属性需按平台做单位映射（px→dp/pt），但不能改变数值精度。未检测到框架时默认生成纯 HTML。各框架的 CSS 属性映射表和资源引用方式见 `references/design-implementation-rules.md`。
 
+若项目根目录存在 `DESIGN.md`（或同等职责的设计系统文档），解析规格与落盘代码前必须先读取并遵守其令牌、排版、组件与命名约定；图层级具体数值仍以规格数据为准，冲突时以规格数值保证当前屏还原度并向用户说明取舍。详见 `references/design-implementation-rules.md`。
+
 ### 生成后保真审计
 
 代码生成后必须逐属性对照设计规格 HTML+CSS 执行保真检查，覆盖 10 项：尺寸约束、裁剪、色值、渐变、绝对定位、字体、间距、图片资源、元素完整性、无远程 URL。对每个差异标注是平台适配还是错误，错误必须修正后交付。完整清单见 `references/design-implementation-rules.md`。
