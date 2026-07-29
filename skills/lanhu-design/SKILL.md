@@ -130,6 +130,7 @@ node scripts/download_slices.mjs slices.json --output ./src/assets/images/slices
 
 脚本只负责稳定下载和基础去重。语义化命名应优先结合当前项目已有命名规范处理。
 全套倍率依赖 `scale_urls` 中的真实多倍率地址；缺失时脚本会报错而不是复制 `download_url`。
+Photoshop 稿（设计 JSON 根节点 `type=ps`）的切图登记在 `assets[]`，脚本会自动按图层 id 提取 `png_xxxhd`/`svg` 地址并推导多倍率（PS 稿图层像素尺寸为 @2x 基准）。
 
 ### 切图下载前置步骤
 
@@ -152,4 +153,5 @@ node scripts/download_slices.mjs slices.json --output ./src/assets/images/slices
 - 所有远程图片/切图已下载为本地资源，代码中没有蓝湖 CDN URL。
 - 图片资源使用目标框架约定的引用方式（如 React `import`、Flutter `AssetImage`）。
 - 切图下载数量、失败数量、输出目录已向用户说明。
+- 中间产物已按 `references/design-implementation-rules.md` 的「临时文件清理规则」处理：设计图原图、规格 HTML、切图 JSON、命名映射在交付后删除，仅保留被代码引用的切图文件。
 - 工作流中未出现认证错误。如果出现过，已引导用户刷新 Cookie 并重试。

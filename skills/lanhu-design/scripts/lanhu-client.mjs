@@ -320,6 +320,104 @@ function addScaleUrls(sliceInfo, imageUrl, logicalSize, sliceScale) {
   };
 }
 
+// Photoshop：蓝湖在根节点 type=ps，导出资源登记在 assets[]（老数据标 isSlice，新数据可能只标 isAsset），
+// 实际 PNG/SVG 地址在对应 id 图层的 images.png_xxxhd / images.svg。
+// PS 稿 layer.width/height 是蓝湖切图面板的 @2x 像素尺寸（即 iOS @2x / Android xhdpi）。
+function buildPsScaleUrls(imageUrl, baseWidth, baseHeight) {
+  if (!imageUrl || !baseWidth || !baseHeight) return {};
+  const bw = Math.max(1, Math.round(baseWidth));
+  const bh = Math.max(1, Math.round(baseHeight));
+  const makeUrl = (w, h) =>
+    `${imageUrl}?x-oss-process=image/resize,w_${Math.max(1, w)},h_${Math.max(1, h)}/format,png`;
+  const oneW = bw / 2;
+  const oneH = bh / 2;
+  return {
+    "1x": makeUrl(Math.round(oneW), Math.round(oneH)),
+    "2x": makeUrl(bw, bh),
+    "3x": makeUrl(Math.round(oneW * 3), Math.round(oneH * 3)),
+    ios_1x: makeUrl(Math.round(oneW), Math.round(oneH)),
+    ios_2x: makeUrl(bw, bh),
+    ios_3x: makeUrl(Math.round(oneW * 3), Math.round(oneH * 3)),
+    android_mdpi: makeUrl(Math.round(oneW), Math.round(oneH)),
+    android_hdpi: makeUrl(Math.round(oneW * 1.5), Math.round(oneH * 1.5)),
+    android_xhdpi: makeUrl(bw, bh),
+    android_xxhdpi: makeUrl(Math.round(oneW * 3), Math.round(oneH * 3)),
+    android_xxxhdpi: makeUrl(Math.round(oneW * 4), Math.round(oneH * 4)),
+  };
+}
+
+function extractPhotoshopSlices(sketchData, slices, seenSlices, includeMetadata) {
+  if (String(sketchData.type || "").toLowerCase() !== "ps") return;
+  if (!Array.isArray(sketchData.assets)) return;
+
+  const byId = new Map();
+  (function indexPs(obj) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
+    if (obj.id != null) byId.set(obj.id, obj);
+    for (const key of ["layers", "children"]) {
+      for (const child of obj[key] || []) indexPs(child);
+    }
+  })(sketchData.board);
+  for (const section of sketchData.info || []) indexPs(section);
+
+  for (const asset of sketchData.assets) {
+    if (!asset || typeof asset !== "object") continue;
+    const lid = asset.id;
+    if (lid == null || seenSlices.has(`id:${lid}`)) continue;
+    const layer = byId.get(lid);
+    if (!layer) continue;
+    if (!(asset.isSlice || asset.isAsset || layer.isSlice || layer.isAsset)) continue;
+    const imgs = layer.images || {};
+    const downloadUrl = imgs.png_xxxhd || imgs.svg;
+    if (!downloadUrl) continue;
+
+    let baseW = Number(layer.width) || 0;
+    let baseH = Number(layer.height) || 0;
+    if (baseW <= 0 || baseH <= 0) {
+      const bb = asset.bounds || {};
+      baseW = Number(bb.right || 0) - Number(bb.left || 0);
+      baseH = Number(bb.bottom || 0) - Number(bb.top || 0);
+    }
+    if (baseW <= 0 || baseH <= 0) continue;
+
+    const displayName = asset.name || layer.name || "slice";
+    const sliceInfo = {
+      id: lid,
+      name: displayName,
+      type: layer.type || "ps-slice",
+      download_url: downloadUrl,
+      size: `${Math.round(baseW)}x${Math.round(baseH)}`,
+      format: imgs.png_xxxhd ? "png" : "svg",
+    };
+    if (imgs.png_xxxhd && imgs.svg) sliceInfo.svg_url = imgs.svg;
+    if ("left" in layer && "top" in layer) {
+      sliceInfo.position = {
+        x: Math.round(Number(layer.left) || 0),
+        y: Math.round(Number(layer.top) || 0),
+      };
+    }
+    sliceInfo.layer_path = displayName;
+
+    if (includeMetadata) {
+      const metadata = { source: "photoshop", asset_id: lid };
+      if (asset.scaleType != null) metadata.scaleType = asset.scaleType;
+      sliceInfo.metadata = metadata;
+    }
+
+    if (imgs.png_xxxhd) {
+      sliceInfo.scale_urls = buildPsScaleUrls(downloadUrl, baseW, baseH);
+      sliceInfo.logical_size = {
+        width: Math.round(baseW / 2),
+        height: Math.round(baseH / 2),
+        note: "1x logical px; PS slice base px equals iOS @2x / Android xhdpi",
+      };
+    }
+
+    seenSlices.add(`id:${lid}`);
+    slices.push(sliceInfo);
+  }
+}
+
 export async function getDesignSlicesInfo(
   url,
   designName,
@@ -516,6 +614,7 @@ export async function getDesignSlicesInfo(
   }
 
   findDdsImages(sketchData);
+  extractPhotoshopSlices(sketchData, slices, seenSlices, includeMetadata);
 
   return {
     status: "success",

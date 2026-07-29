@@ -227,3 +227,22 @@ layer_path: "NavigationBar/SearchIcon"
 | Android | `android_xxhdpi` | `mipmap-xxhdpi/name.png` |
 | Android | `android_xxxhdpi` | `mipmap-xxxhdpi/name.png` |
 | Android | `android-all` | 同时下载全部密度 |
+
+## 临时文件清理规则
+
+设计还原流程会产生中间文件。完成编码并通过保真审计后，按下表决定去留：
+
+| 中间产物 | 典型路径 | 决策 | 理由 |
+|---------|---------|------|------|
+| 设计图原图 | `download_design_images.mjs --output <dir>` | **删除** | 仅用于还原期间的视觉核对；代码交付后已无引用，留在项目里会被误提交 |
+| 规格 HTML + 预览资源 | `get_design_specs.mjs --output <dir>` 的 HTML 和 `assets/slices/` | **删除** | 仅是核对渲染用的预览副本；真正的切图已下载到项目资源目录，HTML 里的相对路径在目标代码中不被引用 |
+| 切图元数据 JSON | `get_design_slices.mjs > slices.json` | **删除** | 一次性中间格式，下载完成后使命结束 |
+| 命名映射 | `--name-map names.json` | **删除** | 同上 |
+| 下载的切图文件 | 项目资源目录（`src/assets/` 等） | **保留** | 生成代码直接引用，是最终交付物的一部分 |
+
+执行规则：
+
+1. 删除前先确认生成代码中没有引用待删路径（grep 一遍 `src`/`url()`/import 路径）。
+2. 删除时告知用户删了哪些文件；用户明确要求保留核对材料时不要删。
+3. 默认把中间产物输出到独立目录（如 `.lanhu/` 或系统临时目录），清理时整个目录移除，避免散落项目各处。
+4. 如果项目使用 git，可在开始工作前建议把中间目录加入 `.gitignore`，比事后删除更稳妥。

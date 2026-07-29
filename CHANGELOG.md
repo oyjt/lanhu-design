@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 支持提取 Photoshop 稿切图：设计 JSON 根节点 `type=ps` 时，自动从 `assets[]` 按图层 id 提取 `png_xxxhd`/`svg` 地址（兼容老数据 `isSlice` 和新数据 `isAsset` 标记），并按 PS 稿 @2x 基准推导 Web/iOS/Android 多倍率 `scale_urls`。
+- 新增「临时文件清理规则」：设计还原交付后，设计图原图、规格 HTML、切图 JSON、命名映射等中间产物应删除（删除前需确认代码无引用），仅保留被代码引用的切图文件。
 - 将可安装技能移动到 `skills/lanhu-design/`，在支持子目录安装时避免把仓库说明、测试等文件装进技能目录。
 - 将自检脚本移动到 `tests/self_check.mjs`，并更新本地校验命令。
 - 修复遍历蓝湖嵌套图层数据时重复提取切图的问题。

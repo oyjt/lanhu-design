@@ -170,6 +170,86 @@ async function checkSliceDeduping() {
   }
 }
 
+async function checkPhotoshopSlices() {
+  process.env.LANHU_COOKIE = "self-check";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const href = String(url);
+    if (href.includes("/api/project/images")) {
+      return Response.json({
+        code: "00000",
+        data: {
+          name: "Project",
+          images: [
+            { id: "d1", name: "PS Page", width: 750, height: 1334, url: "https://cdn.test/ps.png" },
+          ],
+        },
+      });
+    }
+    if (href.includes("/api/project/image")) {
+      return Response.json({
+        code: "00000",
+        result: { versions: [{ id: "v1", json_url: "https://cdn.test/ps.json" }] },
+      });
+    }
+    if (href.includes("ps.json")) {
+      return Response.json({
+        type: "ps",
+        board: {
+          layers: [
+            {
+              id: "L1",
+              name: "btn_bg",
+              type: "layer",
+              left: 10,
+              top: 20,
+              width: 200,
+              height: 80,
+              images: { png_xxxhd: "https://cdn.test/btn.png", svg: "https://cdn.test/btn.svg" },
+            },
+            {
+              id: "L2",
+              name: "not_exported",
+              width: 100,
+              height: 100,
+              images: { png_xxxhd: "https://cdn.test/skip.png" },
+            },
+          ],
+        },
+        assets: [
+          { id: "L1", name: "btn_bg", isAsset: true, scaleType: 2 },
+          { id: "L2" },
+          { id: "L3", isSlice: true },
+        ],
+      });
+    }
+    throw new Error(`Unexpected fetch: ${href}`);
+  };
+
+  try {
+    const { getDesignSlicesInfo } = await import("../skills/lanhu-design/scripts/lanhu-client.mjs");
+    const result = await getDesignSlicesInfo(
+      "https://lanhuapp.com/web/#/item/project/stage?pid=p1&tid=t1",
+      "1",
+    );
+    assert.equal(result.total_slices, 1);
+    const slice = result.slices[0];
+    assert.equal(slice.id, "L1");
+    assert.equal(slice.download_url, "https://cdn.test/btn.png");
+    assert.equal(slice.svg_url, "https://cdn.test/btn.svg");
+    assert.equal(slice.size, "200x80");
+    assert.deepEqual(slice.position, { x: 10, y: 20 });
+    assert.equal(slice.metadata.source, "photoshop");
+    assert.match(slice.scale_urls["2x"], /w_200,h_80/);
+    assert.match(slice.scale_urls["1x"], /w_100,h_40/);
+    assert.match(slice.scale_urls["3x"], /w_300,h_120/);
+    assert.match(slice.scale_urls.android_hdpi, /w_150,h_60/);
+    assert.equal(slice.logical_size.width, 100);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 async function checkScaleFallback() {
   const tempDir = await mkdtemp(path.join(tmpdir(), "lanhu-design-check-"));
   try {
@@ -214,5 +294,6 @@ checkHtmlEscaping();
 checkSketchAnnotations();
 checkImageLocalization();
 await checkSliceDeduping();
+await checkPhotoshopSlices();
 await checkScaleFallback();
 console.log("self_check passed");
