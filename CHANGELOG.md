@@ -2,7 +2,7 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
-## 未发布
+## 1.1.0 - 2026-07-29
 
 - 支持提取 Photoshop 稿切图：设计 JSON 根节点 `type=ps` 时，自动从 `assets[]` 按图层 id 提取 `png_xxxhd`/`svg` 地址（兼容老数据 `isSlice` 和新数据 `isAsset` 标记），并按 PS 稿 @2x 基准推导 Web/iOS/Android 多倍率 `scale_urls`。
 - 新增「临时文件清理规则」：设计还原交付后，设计图原图、规格 HTML、切图 JSON、命名映射等中间产物应删除（删除前需确认代码无引用），仅保留被代码引用的切图文件。
