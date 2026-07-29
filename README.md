@@ -5,7 +5,7 @@
 ## 安装
 
 ```bash
-npx skills add oyjt/lanhu-design/skills/lanhu-design
+npx skills add oyjt/lanhu-design
 ```
 
 技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
@@ -31,7 +31,7 @@ npx skills add oyjt/lanhu-design/skills/lanhu-design
 
 #### Claude Code
 
-编辑项目根目录下的 `.claude/settings.json`（没有则新建），添加：
+编辑用户级配置 `~/.claude/settings.json`（跨项目生效，且不进入项目仓库，推荐），添加：
 
 ```json
 {
@@ -40,6 +40,8 @@ npx skills add oyjt/lanhu-design/skills/lanhu-design
   }
 }
 ```
+
+也可以放在项目根目录的 `.claude/settings.json` 中，但务必确认该文件已被你项目的 `.gitignore` 忽略（本技能仓库已默认忽略，你的项目不一定）。
 
 #### Codex CLI
 
@@ -60,27 +62,13 @@ includes = ["LANHU_COOKIE"]
 
 #### Cursor
 
-打开 Cursor 设置（`Cmd/Ctrl + ,`），搜索 `terminal.integrated.env`，在对应操作系统的配置中添加：
+Cursor 的 AI Agent 执行命令时不使用内置终端，因此 `terminal.integrated.env.*` 配置对它**无效**。请使用系统级环境变量：
 
-```json
-{
-  "terminal.integrated.env.osx": {
-    "LANHU_COOKIE": "你复制的Cookie值"
-  },
-  "terminal.integrated.env.windows": {
-    "LANHU_COOKIE": "你复制的Cookie值"
-  },
-  "terminal.integrated.env.linux": {
-    "LANHU_COOKIE": "你复制的Cookie值"
-  }
-}
-```
+**Windows：**「系统属性 → 环境变量」中添加用户变量 `LANHU_COOKIE`，值为你的 Cookie，然后**完全退出并重启 Cursor**。
 
-或者在项目根目录创建 `.env` 文件（如果你的项目支持 dotenv）：
+**macOS / Linux：** 在 `~/.zshrc` 或 `~/.bashrc` 中添加 `export LANHU_COOKIE="你复制的Cookie值"`，然后从该终端启动 Cursor（GUI 启动的 Cursor 不读 shell rc 文件，macOS 上可用 `launchctl setenv LANHU_COOKIE "值"` 后重启 Cursor）。
 
-```
-LANHU_COOKIE=你复制的Cookie值
-```
+> 注意：在项目根目录创建 `.env` 文件对本技能**无效**——脚本只读进程环境变量，不加载 dotenv。
 
 #### 终端直接设置（临时生效）
 
@@ -98,13 +86,15 @@ export LANHU_COOKIE="你复制的Cookie值"
 set LANHU_COOKIE=你复制的Cookie值
 ```
 
+> 注意：`set` 命令的值**不要加引号**，`set LANHU_COOKIE="xxx"` 会把引号一起存入变量，导致 Cookie 头非法、认证失败。
+
 **Windows PowerShell：**
 
 ```powershell
 $env:LANHU_COOKIE="你复制的Cookie值"
 ```
 
-> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。本仓库默认忽略 `.env` 和 `.claude/settings.json`。
+> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。存放 Cookie 的配置文件（如 `.claude/settings.json`、`.env`、shell rc 文件）应确认已被你项目的 `.gitignore` 忽略，或改用用户级配置（如 `~/.claude/settings.json`）避免进入项目仓库。
 
 ## 功能说明
 
