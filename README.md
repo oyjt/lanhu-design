@@ -10,6 +10,14 @@ npx skills add oyjt/lanhu-design
 
 技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
 
+## 版本
+
+本项目使用 git tag（`v*`）做版本管理，遵循[语义化版本](https://semver.org/lang/zh-CN/)。每个版本的更新内容见 [CHANGELOG.md](CHANGELOG.md)。
+
+- 安装最新版：`npx skills add oyjt/lanhu-design`
+- 安装指定版本：`npx skills add oyjt/lanhu-design#v1.0.0`
+- 查看所有版本：`git ls-remote --tags https://github.com/oyjt/lanhu-design`
+
 ## 前置条件
 
 - **Node.js >= 18**（使用原生 `fetch`）
