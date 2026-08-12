@@ -1,5 +1,17 @@
 # Lanhu 设计脚本参考
 
+## 目录
+
+- [认证](#认证)
+- [URL 规则](#url-规则)
+- [运行约定](#运行约定)
+- [get_designs.mjs](#scriptsget_designsmjs)
+- [download_design_images.mjs](#scriptsdownload_design_imagesmjs)
+- [get_design_slices.mjs](#scriptsget_design_slicesmjs)
+- [download_slices.mjs](#scriptsdownload_slicesmjs)
+- [get_design_specs.mjs](#scriptsget_design_specsmjs)
+- [API 端点参考](#api-端点参考)
+
 ## 认证
 
 蓝湖没有公开 API。脚本通过环境变量 `LANHU_COOKIE` 携带浏览器会话 Cookie 请求蓝湖后端。
@@ -24,6 +36,15 @@ https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx
 - `tid` 可选。
 - 不要传 PRD/Axure 文档链接。包含 `docId` 的链接通常属于需求文档。
 - `detailDetach` 或包含 `image_id` 的链接可用于定位单个设计图，但仍应先调用列表脚本确认。
+
+## 运行约定
+
+- **依赖**：Node.js 18+、网络访问和有效的 `LANHU_COOKIE`；无需安装第三方 npm 包。
+- **路径**：命令示例以技能目录为当前工作目录。若从目标项目执行，使用脚本的绝对路径或完整相对路径。
+- **标准输出**：查询脚本在 stdout 输出 JSON；下载脚本输出进度与汇总。需要保存 JSON 时由调用方重定向到明确的中间文件。
+- **标准错误**：参数错误、认证错误、保存路径和下载失败详情写入 stderr。任何日志都不得包含 Cookie。
+- **退出码**：`0` 表示成功或显示帮助，`1` 表示请求/认证/下载失败，`2` 表示参数错误。批量下载存在失败项时返回非零退出码并保留失败列表。
+- **写入边界**：只有带 `--output` 的命令和下载命令写文件；执行前确认输出目录，避免覆盖项目现有资源。
 
 ## scripts/get_designs.mjs
 
@@ -259,7 +280,7 @@ node scripts/get_design_specs.mjs "https://lanhuapp.com/..." --design "首页" -
 
 - `source`：`"dds"` 表示主路径（精确 flex HTML），`"sketch"` 表示降级路径（绝对定位 HTML）。
 - `design_scale`：Sketch/Figma 降级时使用的倍率，优先来自 `device`、`sliceScale`、`exportScale` 或 `meta.sliceScale`。
-- `html`：完整 HTML+CSS 文档，是所有 CSS 属性值的权威来源。直接复用其中的颜色、字号、间距等值。
+- `html`：完整 HTML+CSS 文档。`source="dds"` 时是 CSS 属性值和布局结构的权威来源；`source="sketch"` 时仅作元素与绝对定位参考，精确视觉数值以 `design_tokens` / `sketch_annotations` 为准。
 - `design_tokens`：高风险元素标注（渐变、非均匀圆角、阴影、opacity<100），补充 HTML 中可能被合并的视觉信息。
 - `sketch_annotations`：仅 `source=sketch` 时有值，包含按文本、图片/切图、形状/普通图层分组的结构化标注。
 - `layer_css_annotations`：仅 `source=sketch` 时有值，数组形式列出每个可见图层的 `path`、`type`、`css`、`text` 或 `src`。
@@ -267,9 +288,9 @@ node scripts/get_design_specs.mjs "https://lanhuapp.com/..." --design "首页" -
 
 使用规则：
 
-- `html` 字段是 CSS 数值的唯一权威来源，必须直接复用，不能主观修改。
+- `source="dds"` 时，`html` 字段是 CSS 数值与布局的权威来源，必须直接复用，不能主观修改。
 - `image_url_mapping` 中的远程 URL 需要下载为本地资源，不能在最终代码中保留。
-- `source="sketch"` 时 HTML 用绝对定位且元素带 `data-css`，还原时结合 `sketch_annotations` / `layer_css_annotations` 转换为目标框架的布局方式。
+- `source="sketch"` 时 HTML 用绝对定位且元素带 `data-css`，不能作为布局权威；以原图判断布局，以 `design_tokens` / `sketch_annotations` 的数值还原视觉属性，并结合 `layer_css_annotations` 转换为目标框架的布局方式。
 
 ## API 端点参考
 

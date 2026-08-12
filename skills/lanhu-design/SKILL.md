@@ -1,6 +1,11 @@
 ---
 name: lanhu-design
-description: "Use this skill when working with Lanhu UI design drafts: get UI design image lists, analyze UI design images, read design HTML/CSS specs, extract design tokens, get slice/icon/asset download information, batch download slices, or implement UI from Lanhu design handoff. Trigger on Chinese or English requests mentioning 蓝湖, Lanhu, UI设计稿, 设计图, 视觉稿, 切图, 图标, 素材, design handoff, design slices, or Lanhu design tools."
+description: "Use for Lanhu (蓝湖) UI design handoffs and lanhuapp.com design project links: list design screens, inspect screenshots and HTML/CSS specs, extract design tokens, download slices/assets, or implement UI. Trigger when the request explicitly mentions 蓝湖, Lanhu, lanhuapp.com, or the bundled Lanhu scripts. Do not use for standalone Figma/Sketch files, generic UI implementation, PRD/Axure docId links, or image editing unrelated to Lanhu."
+license: MIT; see LICENSE.txt
+compatibility: Requires Node.js 18+, network access to lanhuapp.com, and a valid LANHU_COOKIE environment variable.
+metadata:
+  author: oyjt
+  version: 1.3.0
 ---
 
 # Lanhu Design
@@ -155,5 +160,9 @@ Photoshop 稿（设计 JSON 根节点 `type=ps`）的切图登记在 `assets[]`�
 - 所有远程图片/切图已下载为本地资源，代码中没有蓝湖 CDN URL。
 - 图片资源使用目标框架约定的引用方式（如 React `import`、Flutter `AssetImage`）。
 - 切图下载数量、失败数量、输出目录已向用户说明。
-- 中间产物已按 `references/design-implementation-rules.md` 的「临时文件清理规则」处理：设计图原图、规格 HTML、切图 JSON、命名映射在交付后删除，仅保留被代码引用的切图文件。
+- 中间产物已按 `references/design-implementation-rules.md` 的「临时文件清理规则」处理：先列出候选路径并检查引用，取得用户明确确认后再删除；仅保留被代码引用的切图文件。用户未确认时保留文件并报告路径。
 - 工作流中未出现认证错误。如果出现过，已引导用户刷新 Cookie 并重试。
+
+## 交付输出
+
+最终回复简要列出：处理的设计图和 `source`、新增或修改的代码/资源路径、切图下载成功与失败数量、执行的验证及结果、仍需用户处理的认证或平台适配事项。不要输出 Cookie、带认证参数的完整请求头或不必要的远程资源 URL。

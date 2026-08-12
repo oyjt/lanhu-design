@@ -1,0 +1,62 @@
+{
+  "skill_name": "lanhu-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我看看这个蓝湖项目里有哪些 UI 设计图：https://lanhuapp.com/web/#/item/project/stage?tid=team-1&pid=project-1",
+      "expected_output": "校验认证与链接后调用设计图列表脚本，并返回名称、序号和尺寸；不提前下载全部设计图。",
+      "files": [],
+      "expectations": [
+        "先检查 LANHU_COOKIE，认证失败时停止后续调用",
+        "使用 scripts/get_designs.mjs 获取列表",
+        "设计图较多时先让用户限定范围，除非用户明确要求全部"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "请按这个蓝湖稿实现首页，项目里已有 Vue 3 和 DESIGN.md：https://lanhuapp.com/web/#/item/project/stage?tid=team-1&pid=project-1",
+      "expected_output": "读取项目约定，先看原图再提取规格，根据 source 分级还原 Vue 页面，下载本地资源并完成保真审计。",
+      "files": [],
+      "expectations": [
+        "实现前读取 DESIGN.md 和现有 Vue 项目结构",
+        "先调用 get_designs.mjs，再下载并实际查看目标设计图原图",
+        "调用 get_design_specs.mjs 并根据 dds 或 sketch 来源选择正确的权威数据",
+        "最终代码不保留蓝湖 CDN URL，并执行 10 项保真审计"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "把首页的图标切成 Android 全套密度并放进这个现有 Android 项目：https://lanhuapp.com/web/#/item/project/stage?pid=project-1",
+      "expected_output": "确认设计图和输出目录，获取真实切图倍率 URL，使用 android-all 下载并报告结果。",
+      "files": [],
+      "expectations": [
+        "先列出设计图并确认目标设计图",
+        "读取 Android 项目已有资源目录和命名约定",
+        "使用 get_design_slices.mjs 和 download_slices.mjs --scale android-all",
+        "缺少 scale_urls 时报告错误，不复制单一图片伪造多倍率"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "这是蓝湖里的需求文档，帮我实现一下：https://lanhuapp.com/web/#/item/project/detailDetach?docId=prd-1",
+      "expected_output": "识别为 PRD/需求文档而非 UI 设计项目链接，不调用设计稿脚本，并要求用户提供带 pid 的 stage 链接。",
+      "files": [],
+      "expectations": [
+        "识别 docId 链接不属于本技能支持的 UI 设计稿输入",
+        "不调用任何需要 LANHU_COOKIE 的蓝湖设计脚本",
+        "说明需要包含 pid 的项目 stage 链接"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我只有一个本地 Figma 导出的 JSON，没有蓝湖链接。请帮我解析里面的颜色和字号。",
+      "expected_output": "不触发蓝湖网络工作流，不索要 LANHU_COOKIE；改用适合本地 Figma JSON 的普通文件分析方式。",
+      "files": [],
+      "expectations": [
+        "不调用蓝湖脚本或请求 LANHU_COOKIE",
+        "明确当前输入不属于蓝湖设计交付",
+        "使用本地文件分析路径处理任务"
+      ]
+    }
+  ]
+}

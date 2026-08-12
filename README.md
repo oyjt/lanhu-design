@@ -9,6 +9,7 @@ npx skills add oyjt/lanhu-design
 ```
 
 技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
+技能目录自身包含 `LICENSE.txt`、Codex/ChatGPT 展示元数据和 `evals/evals.json`，可随安装包独立分发和评测。
 
 ## 版本
 
@@ -189,15 +190,16 @@ AI 会自动：
 
 ## 兼容性
 
-本技能遵循 [Agent Skills](https://github.com/vercel-labs/skills) 开放标准，可在 Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot 等兼容的 AI 编码助手中使用。
+本技能遵循 [Agent Skills](https://agentskills.io/) 开放标准，可在 Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot 等兼容的 AI 编码助手中使用。
 
 ## 开发校验
 
 ```bash
-node --check skills/lanhu-design/scripts/*.mjs tests/*.mjs
 node tests/self_check.mjs
-python3 /Users/ouyang/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/lanhu-design
+npx skills-ref validate skills/lanhu-design
 ```
+
+`tests/self_check.mjs` 覆盖核心转换/下载逻辑和技能包结构；`skills/lanhu-design/evals/evals.json` 保存正向、边界与负向 Agent 评测用例。
 
 ## 致谢
 

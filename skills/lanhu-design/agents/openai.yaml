@@ -1,0 +1,7 @@
+interface:
+  display_name: "蓝湖设计稿"
+  short_description: "读取蓝湖设计规格、切图并高保真实现 UI"
+  default_prompt: "Use $lanhu-design to inspect this Lanhu design handoff and implement or extract exactly what I request."
+
+policy:
+  allow_implicit_invocation: true

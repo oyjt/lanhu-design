@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -17,7 +17,52 @@ import {
 } from "../skills/lanhu-design/scripts/design-converter.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const skillRoot = path.resolve(here, "../skills/lanhu-design");
 const skillScripts = path.resolve(here, "../skills/lanhu-design/scripts");
+
+async function checkSkillPackage() {
+  const skill = await readFile(path.join(skillRoot, "SKILL.md"), "utf8");
+  const frontmatter = skill.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  assert.ok(frontmatter, "SKILL.md must start with YAML frontmatter");
+
+  const field = (name) => {
+    const match = frontmatter[1].match(new RegExp(`^${name}:\\s*(.+)$`, "m"));
+    return match?.[1].trim().replace(/^(["'])(.*)\1$/, "$2") || "";
+  };
+  assert.equal(field("name"), path.basename(skillRoot));
+  assert.match(field("name"), /^(?!-)(?!.*--)[a-z0-9-]{1,64}(?<!-)$/);
+  assert.ok(field("description").length >= 1 && field("description").length <= 1024);
+  assert.ok(field("compatibility").length <= 500);
+  assert.match(field("license"), /LICENSE\.txt/);
+  assert.match(frontmatter[1], /^metadata:\r?\n(?:  .+\r?\n?)+/m);
+
+  await access(path.join(skillRoot, "LICENSE.txt"));
+  const openai = await readFile(path.join(skillRoot, "agents/openai.yaml"), "utf8");
+  assert.match(openai, /^interface:/m);
+  assert.match(openai, /^  display_name: .+/m);
+  assert.match(openai, /^  short_description: .+/m);
+  assert.match(openai, /^  default_prompt: .+\$lanhu-design.+/m);
+  assert.match(openai, /^policy:\r?\n  allow_implicit_invocation: true$/m);
+
+  const evals = JSON.parse(await readFile(path.join(skillRoot, "evals/evals.json"), "utf8"));
+  assert.equal(evals.skill_name, field("name"));
+  assert.ok(evals.evals.length >= 3);
+  assert.equal(new Set(evals.evals.map(({ id }) => id)).size, evals.evals.length);
+  for (const evaluation of evals.evals) {
+    assert.ok(Number.isInteger(evaluation.id));
+    assert.ok(evaluation.prompt);
+    assert.ok(evaluation.expected_output);
+    assert.ok(Array.isArray(evaluation.files));
+    assert.ok(Array.isArray(evaluation.expectations) && evaluation.expectations.length > 0);
+  }
+
+  const help = spawnSync(process.execPath, [
+    path.join(skillScripts, "get_designs.mjs"),
+    "--help",
+  ], { encoding: "utf8" });
+  assert.equal(help.status, 0, help.stderr || help.stdout);
+  assert.match(help.stdout, /usage:/);
+}
 
 function checkHtmlEscaping() {
   const ddsHtml = convertLanhuToHtml({
@@ -290,6 +335,7 @@ async function checkScaleFallback() {
   }
 }
 
+await checkSkillPackage();
 checkHtmlEscaping();
 checkSketchAnnotations();
 checkImageLocalization();
