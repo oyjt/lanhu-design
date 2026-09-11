@@ -585,8 +585,9 @@ function getImageSrc(layer) {
 }
 
 function isImageLayer(layer) {
-  // Figma：hasExportImage=true 且带 image.imageUrl，整层已被导出为一张切片图。
-  if (layer.hasExportImage && layer.image?.imageUrl) return true;
+  // Figma：层带 image.{imageUrl,svgUrl} 即整层已导出为一张切图（不依赖 hasExportImage 标志），
+  // 编组/图标整体作图片资源，避免被当容器递归展开成矢量碎片。
+  if (layer.image?.imageUrl || layer.image?.svgUrl) return true;
   const t = normType(layer);
   if (t === "bitmap" || t === "image") return true;
   if (layer.imageData && !layer.layers?.length) return true;
@@ -664,6 +665,9 @@ export function detectDesignScale(sketchData = {}, canvasSize = {}) {
   if (/@1x/i.test(deviceText)) return 1;
   const scale = Number(sketchData.sliceScale || sketchData.exportScale || sketchData.meta?.sliceScale);
   if (Number.isFinite(scale) && scale > 0) return scale;
+  // Figma artboard(origin=figma) 的 frame 已是逻辑坐标，无 device/sliceScale 标识时判定 1x（对齐 lanhu-mcp #118），
+  // 避免宽画板（iPad/桌面 >750px）被下方启发式误判为 2x 导致标注坐标整体减半。旧 Sketch/PS 稿无 origin，仍走兜底。
+  if (String(sketchData.artboard?.origin || "").toLowerCase() === "figma") return 1;
   const root = sketchData.artboard || sketchData.board || (sketchData.info && sketchData.info[0]);
   const rootWidth = getFrame(root || {}).width || root?.width || 0;
   if (canvasSize.width && rootWidth && rootWidth > canvasSize.width * 1.5) return Math.round(rootWidth / canvasSize.width);

@@ -2,6 +2,12 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## 1.3.1 - 2026-09-11
+
+- 修复 Figma 编组带 `image` 字段（无 `hasExportImage`）时被当作容器递归展开成矢量碎片：切图层识别改为 `image.imageUrl`/`svgUrl` 存在即整体作为一张切图，HTML 渲染与标注提取共用同一判断。
+- 修复 Figma 宽画板（iPad/桌面 >750px）在缺少 `device`/`sliceScale` 标识时被误判为 @2x、导致标注坐标整体减半偏移：`artboard.origin=figma` 时按逻辑坐标默认 @1x，旧 Sketch/PS 稿行为不变。
+- 扩展自检，覆盖 Figma 宽画板倍率判断与 `image` 字段编组切图识别。
+
 ## 1.3.0 - 2026-08-12
 
 - 按 Agent Skills 规范补充技能内许可证、兼容性/版本元数据、Codex/ChatGPT 展示配置和正向/负向评测集。

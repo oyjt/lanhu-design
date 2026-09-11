@@ -132,6 +132,62 @@ function checkSketchAnnotations() {
   assert.match(summary, /形状\/普通图层 \(1\)/);
 }
 
+function checkFigmaArtboardScale() {
+  // Figma artboard(origin=figma) 的 frame 是逻辑坐标，宽画板无 device/sliceScale 标识时判定 1x，
+  // 不再按宽度 >750 误判为 2x 导致标注坐标整体减半偏移。
+  const figmaWide = {
+    artboard: { origin: "figma", frame: { left: 0, top: 0, width: 1440, height: 1024 }, layers: [] },
+  };
+  assert.equal(detectDesignScale(figmaWide, { width: 1440, height: 1024 }), 1);
+
+  // 显式 @2x device 标识优先级更高，不被 Figma 默认值覆盖。
+  const figmaRetina = {
+    device: "iPad @2x",
+    artboard: { origin: "figma", frame: { width: 1536, height: 2048 }, layers: [] },
+  };
+  assert.equal(detectDesignScale(figmaRetina, { width: 1536, height: 2048 }), 2);
+
+  // 安全边界：无 origin 的旧 Sketch 宽稿不受影响，仍走 >750 → 2x 兜底（保持既有行为）。
+  const legacyWide = {
+    artboard: { frame: { width: 1500, height: 1000 }, layers: [] },
+  };
+  assert.equal(detectDesignScale(legacyWide, { width: 1500, height: 1000 }), 2);
+}
+
+function checkFigmaImageGroupSlice() {
+  // Figma 编组带 image.{imageUrl,svgUrl}（无 hasExportImage）时整体作为一张切图，
+  // 渲染为 <img> 且不展开子层为矢量碎片；标注提取共用 isImageLayer，同样识别为图片层。
+  const sketchData = {
+    artboard: {
+      origin: "figma",
+      frame: { width: 375, height: 812 },
+      layers: [
+        {
+          type: "group",
+          name: "Robot Icon",
+          frame: { left: 15, top: 939, width: 40, height: 44 },
+          image: { imageUrl: "https://cdn.test/robot.png", svgUrl: "https://cdn.test/robot.svg" },
+          layers: [
+            {
+              type: "shape",
+              name: "Ellipse 426",
+              frame: { left: 17, top: 945, width: 38, height: 38 },
+              style: { fills: [{ type: "color", color: { value: "rgba(0,0,0,1)" } }] },
+            },
+          ],
+        },
+      ],
+    },
+  };
+  const html = convertSketchToHtml(sketchData, 1);
+  assert.match(html, /<img class="Robot_Icon"[^>]*src="https:\/\/cdn\.test\/robot\.png"/);
+  assert.doesNotMatch(html, /class="Ellipse_426"/);
+
+  const annotations = extractLayerAnnotationsFromSketch(sketchData, 1);
+  const robot = annotations.find((item) => item.path === "Robot Icon");
+  assert.equal(robot?.src, "https://cdn.test/robot.png");
+}
+
 function checkImageLocalization() {
   const { html, mapping } = localizeImageUrls(
     '<style>.hero { background-image: url("https://cdn.test/bg.png?token=1"); }</style>' +
@@ -338,6 +394,8 @@ async function checkScaleFallback() {
 await checkSkillPackage();
 checkHtmlEscaping();
 checkSketchAnnotations();
+checkFigmaArtboardScale();
+checkFigmaImageGroupSlice();
 checkImageLocalization();
 await checkSliceDeduping();
 await checkPhotoshopSlices();

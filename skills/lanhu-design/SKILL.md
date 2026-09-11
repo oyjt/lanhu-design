@@ -5,7 +5,7 @@ license: MIT; see LICENSE.txt
 compatibility: Requires Node.js 18+, network access to lanhuapp.com, and a valid LANHU_COOKIE environment variable.
 metadata:
   author: oyjt
-  version: 1.3.0
+  version: 1.3.1
 ---
 
 # Lanhu Design
