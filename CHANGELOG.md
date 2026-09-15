@@ -2,6 +2,14 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## 1.4.0 - Unreleased
+
+- 新增 `lanhu` CLI，支持认证登录、环境诊断、设计稿查询、规格与切图获取、资源下载和导出。
+- 新增 `lanhu auth` 浏览器授权流程，可复用现有浏览器登录态，并支持刷新认证和手动导入 Cookie。
+- 凭据统一保存在 `~/.config/lanhu-design/credentials.json`。
+- 保持 `skills/lanhu-design/` 和原有脚本入口兼容，现有 Agent Skill 用户无需迁移。
+- CLI 最低运行环境调整为 Node.js 22.12。
+
 ## 1.3.1 - 2026-09-11
 
 - 修复 Figma 编组带 `image` 字段（无 `hasExportImage`）时被当作容器递归展开成矢量碎片：切图层识别改为 `image.imageUrl`/`svgUrl` 存在即整体作为一张切图，HTML 渲染与标注提取共用同一判断。

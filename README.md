@@ -1,209 +1,326 @@
 # lanhu-design
 
-一个用于 [蓝湖](https://lanhuapp.com) UI 设计稿协作的 Agent 技能。让 AI 编码助手能够列出设计图、下载设计图进行视觉分析、提取切图/图标/素材元数据，并批量下载切图到项目中。
+用于读取和导出 [蓝湖](https://lanhuapp.com) 设计稿的命令行工具，同时提供可安装的 Agent Skill。
 
-## 安装
+通过 `lanhu` 命令可以完成浏览器授权、设计图查询、预览图下载、设计规格提取、切图下载和设计上下文导出。
+
+## 功能
+
+- 使用系统默认浏览器完成蓝湖登录
+- 列出项目中的设计图
+- 下载设计预览图
+- 导出 HTML、CSS 和 Design Tokens 等设计规格
+- 获取并批量下载 Web、iOS、Android 切图
+- 一次性导出 AI 编码所需的设计上下文
+- 使用 `--json` 输出适合脚本和 Agent 处理的结构化结果
+
+## 环境要求
+
+- Node.js 22.12 或更高版本
+- macOS、Windows 或 Linux
+- 能够访问 `lanhuapp.com` 的网络环境
+- 已加入对应蓝湖项目的账号
+
+## 快速开始
+
+### 1. 安装 CLI（推荐）
+
+```bash
+npm install -g lanhu-design
+lanhu --version
+```
+
+### 2. 登录蓝湖
+
+```bash
+lanhu auth
+```
+
+CLI 会优先复用已有凭据。没有可用凭据时，将读取默认浏览器登录状态；如果浏览器尚未登录，则会打开蓝湖登录页并等待你完成登录。
+
+macOS 从 Chrome、Edge 等 Chromium 浏览器读取登录状态时，系统可能显示钥匙串授权窗口。CLI 会在弹窗出现前说明用途，请根据需要选择“允许”或“始终允许”。
+
+### 3. 使用蓝湖项目链接
+
+将设计项目链接保存为变量，后续命令可直接复用：
+
+```bash
+export LANHU_URL='https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx'
+lanhu designs "$LANHU_URL"
+```
+
+Windows PowerShell：
+
+```powershell
+$env:LANHU_URL='https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx'
+lanhu designs $env:LANHU_URL
+```
+
+## 登录管理
+
+| 命令 | 用途 |
+| --- | --- |
+| `lanhu auth` | 登录或复用已有登录凭据 |
+| `lanhu auth status` | 查看当前凭据状态 |
+| `lanhu auth refresh` | 重新打开浏览器并刷新 Cookie |
+| `lanhu auth import` | 手动导入 Cookie |
+| `lanhu auth logout` | 删除 CLI 保存的凭据 |
+
+登录凭据与 CLI 配置统一保存在用户主目录：
+
+- macOS / Linux：`~/.config/lanhu-design/credentials.json`
+- Windows：`%USERPROFILE%\.config\lanhu-design\credentials.json`
+
+正常情况下只需要执行一次 `lanhu auth`。如果业务命令提示登录过期，请运行：
+
+```bash
+lanhu auth refresh
+```
+
+### 手动导入 Cookie
+
+当系统安全机制禁止读取或解密浏览器 Cookie 时，可以使用内置的手动导入方式：
+
+```bash
+lanhu auth import
+```
+
+命令会通过隐藏输入读取 Cookie，避免将敏感信息直接写入命令行历史。
+
+获取 Cookie 的步骤：
+
+1. 在浏览器打开并登录 `https://lanhuapp.com`。
+2. 打开开发者工具，进入 **Network** 面板。
+3. 刷新页面并选择任意 `lanhuapp.com` 请求。
+4. 在 Request Headers 中复制完整的 `Cookie` 值。
+5. 回到终端执行 `lanhu auth import` 并粘贴。
+
+> Cookie 是敏感凭据。不要将它提交到 Git、粘贴到 Issue、写入公开日志或发送给他人。
+
+## 常用命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `lanhu designs "$LANHU_URL"` | 列出项目设计图 |
+| `lanhu image "$LANHU_URL" --design 首页 --output .lanhu/images` | 下载指定设计图的预览图 |
+| `lanhu specs "$LANHU_URL" --design 首页 --output .lanhu/specs --download-images` | 导出设计规格及引用图片 |
+| `lanhu slices "$LANHU_URL" --design 首页 --output .lanhu/slices.json` | 获取切图元数据 |
+| `lanhu download .lanhu/slices.json --output src/assets --scale 2x` | 批量下载切图 |
+| `lanhu export "$LANHU_URL" --design 首页 --output .lanhu` | 导出完整设计上下文 |
+| `lanhu doctor` | 检查运行环境和凭据配置 |
+
+运行 `lanhu <command> --help` 可以查看命令的完整参数，例如：
+
+```bash
+lanhu specs --help
+lanhu download --help
+```
+
+## 使用场景
+
+### 查看项目设计图
+
+```bash
+lanhu designs "$LANHU_URL"
+```
+
+设计图后续可以通过序号、精确名称或 ID 选择。
+
+### 下载设计预览图
+
+```bash
+lanhu image "$LANHU_URL" \
+  --design "首页" \
+  --output .lanhu/images
+```
+
+预览图适合用于视觉分析和设计还原前的布局确认。
+
+### 导出设计规格
+
+```bash
+lanhu specs "$LANHU_URL" \
+  --design "首页" \
+  --output .lanhu/specs \
+  --download-images
+```
+
+输出包含可用的 HTML、CSS、Design Tokens 和设计图片。数据源可能是高保真的 DDS Schema，也可能是 Sketch/Figma 标注降级结果，命令输出会标明实际来源。
+
+### 获取并下载切图
+
+先保存切图元数据：
+
+```bash
+lanhu slices "$LANHU_URL" \
+  --design "首页" \
+  --output .lanhu/slices.json
+```
+
+再按目标平台下载：
+
+```bash
+# Web 2x
+lanhu download .lanhu/slices.json --output src/assets --scale 2x
+
+# iOS 全倍率
+lanhu download .lanhu/slices.json --output ios-assets --scale ios-all
+
+# Android 全密度
+lanhu download .lanhu/slices.json --output android-assets --scale android-all
+```
+
+支持的常用倍率：
+
+| 平台 | `--scale` |
+| --- | --- |
+| Web | `1x`、`2x`、`3x` |
+| iOS | `ios-all` |
+| Android | `android-all` |
+
+多倍率下载只使用蓝湖提供的真实资源地址；缺少对应倍率时会报告错误，不会复制同一图片伪造多倍率文件。
+
+### 导出完整设计上下文
+
+```bash
+lanhu export "$LANHU_URL" \
+  --design "首页" \
+  --output .lanhu \
+  --scale 2x
+```
+
+`export` 适合交给 AI 编码助手使用，会集中导出设计图、规格和切图信息。
+
+## 结构化输出
+
+在任意命令中添加 `--json`，可以获得稳定的 JSON envelope：
+
+```bash
+lanhu designs "$LANHU_URL" --json
+lanhu doctor --json
+```
+
+普通终端模式优先显示便于阅读的操作结果；`--json` 适合脚本、CI 和 Agent 调用。需要减少非必要输出时可使用 `--quiet`。
+
+## Agent Skill
+
+如果希望 Claude Code、Codex CLI、Cursor 等 AI 编码助手自动调用蓝湖工具，可以安装仓库内的 Agent Skill：
 
 ```bash
 npx skills add oyjt/lanhu-design
 ```
 
-技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
-技能目录自身包含 `LICENSE.txt`、Codex/ChatGPT 展示元数据和 `evals/evals.json`，可随安装包独立分发和评测。
-
-## 版本
-
-本项目使用 git tag（`v*`）做版本管理，遵循[语义化版本](https://semver.org/lang/zh-CN/)。每个版本的更新内容见 [CHANGELOG.md](CHANGELOG.md)。
-
-- 安装最新版：`npx skills add oyjt/lanhu-design`
-- 安装指定版本：`npx skills add oyjt/lanhu-design#v1.0.0`
-- 查看所有版本：`git ls-remote --tags https://github.com/oyjt/lanhu-design`
-
-## 前置条件
-
-- **Node.js >= 18**（使用原生 `fetch`）
-- **`LANHU_COOKIE` 环境变量** — 蓝湖没有公开 API，脚本通过浏览器会话 Cookie 进行认证。
-
-### 获取 Cookie
-
-1. 打开 [lanhuapp.com](https://lanhuapp.com) 并登录。
-2. 按 `F12`（macOS 为 `Cmd+Option+I`）打开开发者工具，切换到 **Network** 标签页。
-3. 刷新页面，点击任意 `lanhuapp.com` 请求。
-4. 在 Request Headers 中找到 `Cookie` 字段，复制完整值。
-5. 将该值设置为 `LANHU_COOKIE` 环境变量（见下方说明）。
-
-> Cookie 通常数天到数周会过期，出现认证错误时需重新获取。
-
-### 设置环境变量
-
-复制到 Cookie 后，根据你使用的工具选择对应的配置方式：
-
-#### Claude Code
-
-编辑用户级配置 `~/.claude/settings.json`（跨项目生效，且不进入项目仓库，推荐），添加：
-
-```json
-{
-  "env": {
-    "LANHU_COOKIE": "你复制的Cookie值"
-  }
-}
-```
-
-也可以放在项目根目录的 `.claude/settings.json` 中，但务必确认该文件已被你项目的 `.gitignore` 忽略（本技能仓库已默认忽略，你的项目不一定）。
-
-#### Codex CLI
-
-在终端设置好环境变量后启动 Codex，它会自动继承当前 shell 的环境变量：
+推荐同时安装 CLI，并先由用户完成登录：
 
 ```bash
-export LANHU_COOKIE="你复制的Cookie值"
-codex
+npm install -g lanhu-design
+lanhu auth
 ```
 
-如需持久化，可在 `~/.codex/config.toml` 中确保该变量被传递给子进程：
+安装后可以直接向 AI 描述任务，例如：
 
-```toml
-[shell_environment_policy]
-inherit = "core"
-includes = ["LANHU_COOKIE"]
+```text
+帮我列出这个蓝湖项目中的设计图：<蓝湖项目链接>
 ```
 
-#### Cursor
+```text
+根据蓝湖项目中的“首页”设计稿还原当前页面，并下载需要的切图。
+```
 
-Cursor 的 AI Agent 执行命令时不使用内置终端，因此 `terminal.integrated.env.*` 配置对它**无效**。请使用系统级环境变量：
+```text
+把“登录页”的切图按 iOS 全倍率下载到项目资源目录。
+```
 
-**Windows：**「系统属性 → 环境变量」中添加用户变量 `LANHU_COOKIE`，值为你的 Cookie，然后**完全退出并重启 Cursor**。
+Skill 会优先使用已安装的 `lanhu` CLI；未安装 CLI 时，仍可通过仓库内兼容脚本和 `LANHU_COOKIE` 环境变量运行。
 
-**macOS / Linux：** 在 `~/.zshrc` 或 `~/.bashrc` 中添加 `export LANHU_COOKIE="你复制的Cookie值"`，然后从该终端启动 Cursor（GUI 启动的 Cursor 不读 shell rc 文件，macOS 上可用 `launchctl setenv LANHU_COOKIE "值"` 后重启 Cursor）。
+## 使用环境变量
 
-> 注意：在项目根目录创建 `.env` 文件对本技能**无效**——脚本只读进程环境变量，不加载 dotenv。
+CLI 推荐使用 `lanhu auth` 管理凭据。自动化环境或旧脚本也可以临时设置 `LANHU_COOKIE`：
 
-#### 终端直接设置（临时生效）
-
-**macOS / Linux：**
+macOS / Linux：
 
 ```bash
-export LANHU_COOKIE="你复制的Cookie值"
+export LANHU_COOKIE='完整 Cookie'
 ```
 
-如需每次打开终端自动生效，将上面这行追加到 `~/.bashrc` 或 `~/.zshrc` 文件末尾。
-
-**Windows CMD：**
-
-```cmd
-set LANHU_COOKIE=你复制的Cookie值
-```
-
-> 注意：`set` 命令的值**不要加引号**，`set LANHU_COOKIE="xxx"` 会把引号一起存入变量，导致 Cookie 头非法、认证失败。
-
-**Windows PowerShell：**
+Windows PowerShell：
 
 ```powershell
-$env:LANHU_COOKIE="你复制的Cookie值"
+$env:LANHU_COOKIE='完整 Cookie'
 ```
 
-> **注意：** Cookie 是敏感凭据，请勿提交到 Git 仓库。存放 Cookie 的配置文件（如 `.claude/settings.json`、`.env`、shell rc 文件）应确认已被你项目的 `.gitignore` 忽略，或改用用户级配置（如 `~/.claude/settings.json`）避免进入项目仓库。
+凭据使用顺序为：显式 `--cookie`（仅用于调试）、`LANHU_COOKIE`、CLI 保存的凭据。
 
-## 功能说明
+> 不建议把 Cookie 写入项目 `.env`、仓库配置或 shell 历史。业务命令不会自动扫描浏览器，只有 `auth`、`auth refresh` 和明确启用浏览器检查的诊断命令会读取浏览器登录状态。
 
-以下脚本位于 `skills/lanhu-design/scripts/`：
+## 故障排查
 
-| 脚本 | 用途 |
-|------|------|
-| `get_designs.mjs` | 列出蓝湖项目的所有设计图 |
-| `get_design_specs.mjs` | 提取设计规格 HTML+CSS、Design Tokens，并可自动下载页面图片 |
-| `download_design_images.mjs` | 下载设计图原图用于视觉分析 |
-| `get_design_slices.mjs` | 获取单个设计图的切图/素材元数据 |
-| `download_slices.mjs` | 根据元数据 JSON 批量下载切图 |
+### macOS 弹出钥匙串授权窗口
 
-## 典型工作流
+这是 Chromium 解密 Cookie 时的系统安全确认。CLI 会在可能弹窗前显示说明。首次授权后是否再次询问由 macOS 钥匙串权限设置决定。
 
-```
-1. 设置 LANHU_COOKIE
-2. 获取设计图列表     → node skills/lanhu-design/scripts/get_designs.mjs <蓝湖链接>
-3. 下载设计图原图     → node skills/lanhu-design/scripts/download_design_images.mjs <链接> --designs 1,2 --output ./tmp
-4. 提取设计规格       → node skills/lanhu-design/scripts/get_design_specs.mjs <链接> --design "首页设计" --output ./tmp --download-images
-5. 获取切图元数据     → node skills/lanhu-design/scripts/get_design_slices.mjs <链接> --design "首页设计"
-6. 批量下载切图       → node skills/lanhu-design/scripts/download_slices.mjs slices.json --output ./src/assets --scale 2x
-```
-
-## 使用示例
-
-### 查看设计图列表
-
-```
-帮我看看这个蓝湖项目有哪些设计图：
-https://lanhuapp.com/web/#/item/project/stage?tid=xxx&pid=xxx
-```
-
-AI 会调用 `get_designs.mjs` 列出项目中所有设计图的名称、尺寸和更新时间。
-
-### 分析与还原设计稿
-
-```
-帮我分析"首页设计"这张设计图，我需要还原它的 UI
-```
-
-AI 会自动：
-
-- 下载设计图原图并进行视觉分析
-- 调用 `get_design_specs.mjs` 提取精确的 HTML+CSS 规格和 Design Tokens（颜色、字体、间距、圆角、渐变、阴影等），并把页面引用的图片下载到本地
-- 检测项目框架（React/Vue/Flutter 等），生成匹配的代码，CSS 值直接复用规格、不主观改动
-- 逐项核对还原结果与设计规格
-
-> 蓝湖设计稿有两种数据来源：DDS Schema（高保真，HTML+CSS 为权威）和 Sketch/Figma 标注（降级，以原图视觉 + Design Tokens 数值为主）。`get_design_specs.mjs` 会自动选择来源并在输出中标注，AI 据此调整还原策略。
-
-### 批量下载切图
-
-```
-帮我下载"首页设计"的所有切图
-```
-
-AI 会自动：
-
-- 获取该设计图的全部切图/图标/素材元数据
-- 检测项目类型（React/Vue/Flutter 等），选择合适的输出目录
-- 确认平台和倍率（默认推荐 Web 2x）
-- 生成语义化文件名并批量下载
-- 汇报下载结果（成功数、失败数、输出路径）
-
-### 指定平台和倍率下载
-
-```
-把"登录页"的切图按 iOS 三套倍率下载到 Assets.xcassets 目录
-```
-
-支持 Web（1x/2x/3x）、iOS（ios-all）、Android（android-all）等多平台倍率，自动按平台规范组织目录结构。
-
-## 支持的平台与倍率
-
-| 平台 | 倍率参数 |
-|------|----------|
-| Web | `1x`、`2x`、`3x` |
-| iOS | `ios_1x`、`ios_2x`、`ios_3x`，或 `ios-all` |
-| Android | `android_mdpi` … `android_xxxhdpi`，或 `android-all` |
-
-> `get_design_slices.mjs` 会尽量根据切图逻辑尺寸生成 `scale_urls`。`download_url` 只作为默认 Web 2x 下载源；若某些旧稿缺少尺寸导致无法生成 `scale_urls`，`1x`、`3x`、`ios-all`、`android-all` 会提示缺失，不会复制同一张图片伪造成多倍率资源。
-
-> `get_design_specs.mjs --download-images` 会把 HTML 中的 `<img src>` 和 CSS `url(...)` 背景资源一并下载到本地映射目录，最终实现时不要保留蓝湖 CDN 地址。
-
-## 兼容性
-
-本技能遵循 [Agent Skills](https://agentskills.io/) 开放标准，可在 Claude Code、Codex CLI、Gemini CLI、Cursor、GitHub Copilot 等兼容的 AI 编码助手中使用。
-
-## 开发校验
+如果不希望 CLI 访问 Keychain，可以取消授权并使用：
 
 ```bash
-node tests/self_check.mjs
-npx skills-ref validate skills/lanhu-design
+lanhu auth import
 ```
 
-`tests/self_check.mjs` 覆盖核心转换/下载逻辑和技能包结构；`skills/lanhu-design/evals/evals.json` 保存正向、边界与负向 Agent 评测用例。
+### 找不到浏览器登录状态
+
+请确认蓝湖已在系统默认浏览器中登录，然后重新执行 `lanhu auth`。如果登录位于其他 Profile，可以显式指定：
+
+```bash
+lanhu auth --browser chrome --profile "Profile 1"
+```
+
+支持的浏览器包括 Chrome、Edge、Brave、Arc、Dia、Chromium、Firefox 和 Safari。
+
+### Windows 无法读取 Chrome 或 Edge Cookie
+
+新版 Chromium 可能使用 App-Bound Encryption，普通进程无法解密。可以改用 Firefox 登录，或执行 `lanhu auth import`。
+
+### 登录状态失效
+
+```bash
+lanhu auth refresh
+```
+
+如果仍然失败，先在浏览器退出并重新登录蓝湖，再运行刷新命令。
+
+### 环境诊断
+
+```bash
+lanhu doctor
+```
+
+提交 Issue 时可以附上 `lanhu doctor --json` 的脱敏结果，但不要附带 Cookie。
+
+## 兼容脚本
+
+原有脚本继续保留在 `skills/lanhu-design/scripts/`，供 Skill 独立运行和旧调用方式使用：
+
+| 脚本 | 用途 |
+| --- | --- |
+| `get_designs.mjs` | 列出设计图 |
+| `download_design_images.mjs` | 下载设计预览图 |
+| `get_design_specs.mjs` | 提取设计规格 |
+| `get_design_slices.mjs` | 获取切图元数据 |
+| `download_slices.mjs` | 批量下载切图 |
+
+兼容脚本要求 Node.js 18 或更高版本，并通过 `LANHU_COOKIE` 完成认证。新用户建议优先使用 CLI。
+
+## 开发与发布
+
+```bash
+corepack pnpm install
+corepack pnpm check
+```
+
+项目使用语义化版本和 `v*` Git 标签发布 npm 包，更新记录见 [CHANGELOG.md](CHANGELOG.md)。仓库维护约定见 [AGENTS.md](AGENTS.md)。
 
 ## 致谢
 
-本项目基于 [lanhu-mcp](https://github.com/dsphper/lanhu-mcp) 开发，感谢原作者对蓝湖 API 逆向工程和 MCP 工具链的开拓性工作。
+本项目基于 [lanhu-mcp](https://github.com/dsphper/lanhu-mcp) 开发，感谢原作者对蓝湖 API 和工具链的探索。
 
 ## 许可证
 

@@ -5,21 +5,34 @@ license: MIT; see LICENSE.txt
 compatibility: Requires Node.js 18+, network access to lanhuapp.com, and a valid LANHU_COOKIE environment variable.
 metadata:
   author: oyjt
-  version: 1.3.1
+  version: 1.4.0
 ---
 
 # Lanhu Design
 
 ## 概览
 
-通过内置脚本直接调用蓝湖 HTTP API，读取 UI 设计稿、分析设计规格、获取切图信息，并把切图落到当前项目的资源目录。
+优先通过 `lanhu` CLI 读取 UI 设计稿、分析设计规格、获取切图信息，并把切图落到当前项目的资源目录。未安装 CLI 时继续使用内置脚本，Skill 仍可独立运行。
+
+## 执行入口选择
+
+开始工作前先探测 `lanhu` 命令：
+
+```bash
+command -v lanhu
+```
+
+- 命令存在：先运行 `lanhu doctor --json`，后续优先使用 `lanhu designs`、`lanhu image`、`lanhu specs`、`lanhu slices`、`lanhu download` 或 `lanhu export`，并为 Agent 调用加 `--json`。
+- 命令不存在：检查 `LANHU_COOKIE`，继续使用下方 `scripts/*.mjs` 兼容入口。
+- 不要在 Agent 工作流中自行全局安装 CLI；是否安装由用户或宿主环境决定。
+- 业务命令不得自动扫描浏览器。需要授权时提示用户显式运行 `lanhu auth`；受限浏览器场景使用 `lanhu auth import`。
 
 需要详细工具契约、返回结构和还原规则时，读取 `references/lanhu-design-tools.md`。
 需要设计还原实现规则（CSS 值保真、DOM 结构映射、切图命名策略、目录选择、倍率指引）时，读取 `references/design-implementation-rules.md`。
 
 ## 前置条件
 
-所有脚本依赖 `LANHU_COOKIE` 环境变量。蓝湖没有公开 API 或 OAuth，脚本通过浏览器会话 Cookie 模拟登录用户请求。Cookie 缺失或过期时，脚本调用报认证错误。
+内置兼容脚本依赖 `LANHU_COOKIE` 环境变量。CLI 用户可以改用 `lanhu auth` 管理用户级凭据。蓝湖没有面向本 CLI 的公开 OAuth，Cookie 缺失或过期时会返回稳定认证错误。
 
 获取 Cookie 的步骤：
 

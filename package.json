@@ -1,0 +1,40 @@
+{
+  "name": "lanhu-design",
+  "version": "1.4.0",
+  "description": "蓝湖设计稿读取、规格提取与切图下载 CLI 和 Agent Skill",
+  "type": "module",
+  "bin": { "lanhu": "dist/cli.js" },
+  "files": ["dist", "skills/lanhu-design", "README.md", "CHANGELOG.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run && node tests/self_check.mjs",
+    "test:unit": "vitest run",
+    "test:skill": "node tests/self_check.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "prepack": "pnpm check"
+  },
+  "engines": { "node": ">=22.12" },
+  "keywords": ["lanhu", "design-to-code", "agent-skill", "cli"],
+  "author": "oyjt",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/oyjt/lanhu-design.git" },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "packageManager": "pnpm@12.4.1",
+  "dependencies": {
+    "@steipete/sweet-cookie": "^0.4.3",
+    "commander": "^15.0.0",
+    "default-browser": "^5.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "tsx": "^4.23.13",
+    "tsup": "^8.5.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

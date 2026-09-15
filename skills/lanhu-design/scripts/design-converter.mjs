@@ -467,11 +467,6 @@ export function extractDesignTokens(sketchData) {
 
 const SKETCH_SKIP_TYPES = new Set(["artboard","page","symbolMaster","slice","MSImmutableHotspotLayer","hotspot","group"]);
 
-function sketchColor(c, alpha) {
-  // 兼容旧调用签名：旧 Sketch 的 r/g/b 是 0-1，需 *255；新格式走 colorToCss 的 value/归一逻辑。
-  return colorToCss(c, alpha);
-}
-
 // 从 Figma 渐变的 from/to 归一化坐标点计算 CSS 角度。
 function gradientAngle(grad) {
   if (grad.from && grad.to) {
