@@ -1,26 +1,35 @@
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { z } from "zod";
 import { paths } from "../config/paths.js";
 
-const credentialSchema = z.object({
-  version: z.literal(1),
-  credential: z.object({
-    type: z.literal("cookie"),
-    value: z.string().min(1),
-    source: z.string(),
-    profile: z.string().optional(),
-    createdAt: z.string(),
-    validatedAt: z.string().optional(),
-  }),
-});
+export interface StoredCredential {
+  version: 1;
+  credential: {
+    type: "cookie";
+    value: string;
+    source: string;
+    profile?: string;
+    createdAt: string;
+    validatedAt?: string;
+  };
+}
 
-export type StoredCredential = z.infer<typeof credentialSchema>;
+export function parseCredential(raw: string): StoredCredential {
+  const value = JSON.parse(raw) as Partial<StoredCredential>;
+  const credential = value?.credential;
+  if (
+    value.version !== 1 || credential?.type !== "cookie" || !credential.value
+    || typeof credential.source !== "string" || typeof credential.createdAt !== "string"
+    || (credential.profile !== undefined && typeof credential.profile !== "string")
+    || (credential.validatedAt !== undefined && typeof credential.validatedAt !== "string")
+  ) throw new TypeError("凭据文件格式无效。");
+  return value as StoredCredential;
+}
 export const credentialPath = path.join(paths.config, "credentials.json");
 
 export async function readCredential(): Promise<StoredCredential | null> {
   try {
-    return credentialSchema.parse(JSON.parse(await readFile(credentialPath, "utf8")));
+    return parseCredential(await readFile(credentialPath, "utf8"));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;

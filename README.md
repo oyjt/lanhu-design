@@ -291,7 +291,6 @@ lanhu auth refresh
 
 ```bash
 lanhu doctor
-lanhu env
 ```
 
 提交 Issue 时可以附上 `lanhu doctor --json` 的脱敏结果，但不要附带 Cookie。

@@ -38,7 +38,6 @@ describe("browser authentication flow", () => {
       source: "Google Chrome",
       profile: "Default",
       validation: { method: "cookie-format" },
-      fingerprint: "abc123",
     });
     const result = await authenticate({ timeout: 120_000, open: true }, deps);
     expect(result.flow).toBe("saved-credential");

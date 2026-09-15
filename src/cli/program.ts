@@ -4,8 +4,6 @@ import { Command, Option } from "commander";
 import { authenticate, authStatus, importCredential, logout } from "../auth/auth-manager.js";
 import { readSecret } from "../auth/read-secret.js";
 import { resolveCredential } from "../auth/credential-resolver.js";
-import { paths } from "../config/paths.js";
-import { readConfig, writeConfig } from "../config/store.js";
 import { runLegacy, type LegacyScript } from "../core/legacy-runner.js";
 import { exportDesign } from "../commands/export.js";
 import { LanhuError } from "../errors/lanhu-error.js";
@@ -45,8 +43,8 @@ async function withOutput(command: Command, name: string, action: (output: Outpu
 
 async function invokeLegacy(command: Command, name: string, script: LegacyScript, args: string[]): Promise<void> {
   await withOutput(command, name, async (output) => {
-    const credential = await resolveCredential(globalOptions(command).cookie);
-    const result = await runLegacy(script, args, { cookie: credential.cookie, timeoutMs: timeout(command) });
+    const cookie = await resolveCredential(globalOptions(command).cookie);
+    const result = await runLegacy(script, args, { cookie, timeoutMs: timeout(command) });
     output.success(result.data);
   });
 }
@@ -84,10 +82,10 @@ function addBusinessCommands(program: Command): void {
     .option("-o, --output <file>", "写入 JSON 文件")
     .option("--no-metadata", "省略扩展元数据")
     .action(async (url, options, command) => withOutput(command, "slices", async (output) => {
-      const credential = await resolveCredential(globalOptions(command).cookie);
+      const cookie = await resolveCredential(globalOptions(command).cookie);
       const args = [url, "--design", options.design];
       if (options.metadata === false) args.push("--no-metadata");
-      const result = await runLegacy("get_design_slices", args, { cookie: credential.cookie, timeoutMs: timeout(command) });
+      const result = await runLegacy("get_design_slices", args, { cookie, timeoutMs: timeout(command) });
       if (options.output) {
         await mkdir(path.dirname(path.resolve(options.output)), { recursive: true });
         await writeFile(options.output, `${JSON.stringify(result.data, null, 2)}\n`, "utf8");
@@ -113,8 +111,8 @@ function addBusinessCommands(program: Command): void {
     .requiredOption("-o, --output <directory>", "导出根目录")
     .option("--scale <scale>", "切图倍率", "2x")
     .action(async (url, options, command) => withOutput(command, "export", async (output) => {
-      const credential = await resolveCredential(globalOptions(command).cookie);
-      const result = await exportDesign({ url, design: options.design, output: options.output, scale: options.scale, cookie: credential.cookie, timeoutMs: timeout(command), version: VERSION });
+      const cookie = await resolveCredential(globalOptions(command).cookie);
+      const result = await exportDesign({ url, design: options.design, output: options.output, scale: options.scale, cookie, timeoutMs: timeout(command), version: VERSION });
       output.success(result, result.warnings);
       if (result.status === "partial") process.exitCode = 8;
     }));
@@ -128,7 +126,6 @@ export function createProgram(): Command {
     .version(VERSION)
     .option("--json", "输出稳定 JSON envelope")
     .option("--quiet", "只输出结果或错误")
-    .option("--no-color", "禁用颜色")
     .option("--verbose", "输出脱敏诊断信息")
     .option("--timeout <milliseconds>", "请求或认证超时", "30000")
     .addOption(new Option("--cookie <cookie>", "显式 Cookie（有 shell history 泄露风险）").hideHelp())
@@ -154,13 +151,12 @@ export function createProgram(): Command {
   }));
   auth.command("logout").description("删除 CLI 本地凭据").action(async (_options, command) => withOutput(command, "auth logout", async (output) => output.success(await logout())));
 
-  program.command("env").description("显示脱敏运行环境").action(async (_options, command) => withOutput(command, "env", async (output) => output.success({ node: process.version, platform: `${process.platform}-${process.arch}`, configDirectory: paths.config, credential: await authStatus() })));
-
   program.command("doctor").description("运行脱敏环境诊断").option("--auth-browser", "明确尝试读取浏览器会话").action(async (options, command) => withOutput(command, "doctor", async (output) => {
+    const credential = await authStatus();
     const checks: Array<{ name: string; ok: boolean; value: unknown }> = [
       { name: "node", ok: Number(process.versions.node.split(".")[0]) >= 20, value: process.version },
       { name: "platform", ok: true, value: `${process.platform}-${process.arch}` },
-      { name: "credential", ok: (await authStatus()).authenticated, value: await authStatus() },
+      { name: "credential", ok: credential.authenticated, value: credential },
     ];
     if (options.authBrowser) {
       try { checks.push({ name: "browser-cookie", ok: true, value: await authenticate({ timeout: 1500, open: false }) }); }
@@ -169,12 +165,6 @@ export function createProgram(): Command {
     output.success({ healthy: checks.every((check) => check.ok || check.name === "credential"), checks });
   }));
 
-  const config = program.command("config").description("管理 CLI 配置");
-  config.command("list").action(async (_options, command) => withOutput(command, "config list", async (output) => output.success(await readConfig())));
-  config.command("get <key>").action(async (key, _options, command) => withOutput(command, "config get", async (output) => output.success({ key, value: (await readConfig())[key] ?? null })));
-  config.command("set <key> <value>").action(async (key, value, _options, command) => withOutput(command, "config set", async (output) => { const current = await readConfig(); current[key] = value; await writeConfig(current); output.success({ key, value }); }));
-
-  program.command("version").description("显示 CLI 版本").action((_options, command) => withOutput(command, "version", async (output) => output.success({ version: VERSION })));
   addBusinessCommands(program);
   return program;
 }

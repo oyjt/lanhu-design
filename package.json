@@ -28,8 +28,7 @@
   "dependencies": {
     "@steipete/sweet-cookie": "^0.4.3",
     "commander": "^15.0.0",
-    "default-browser": "^5.5.1",
-    "zod": "^4.6.5"
+    "default-browser": "^5.5.1"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",

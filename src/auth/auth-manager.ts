@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline/promises";
-import { cookieFingerprint, normalizeCookie } from "./cookie.js";
+import { normalizeCookie } from "./cookie.js";
 import { deleteCredential, readCredential, writeCredential } from "./credential-store.js";
 import { openDefaultBrowser } from "./default-browser.js";
 import { readLanhuBrowserCookie, resolveBrowserTarget } from "./browser-cookie-reader.js";
@@ -87,7 +87,6 @@ export async function authenticate(options: {
       source: result.source,
       profile: result.profile,
       validation: verification,
-      fingerprint: cookieFingerprint(cookie),
       warnings: result.warnings,
     };
   };
@@ -114,14 +113,14 @@ export async function importCredential(cookieInput: string) {
   const cookie = normalizeCookie(cookieInput);
   const verification = await verifyCredential(cookie);
   await writeCredential(cookie, "manual-import");
-  return { authenticated: true, source: "manual-import", validation: verification, fingerprint: cookieFingerprint(cookie) };
+  return { authenticated: true, source: "manual-import", validation: verification };
 }
 
 export async function authStatus() {
   const env = process.env.LANHU_COOKIE?.trim();
   if (env && env !== "your_lanhu_cookie_here") {
     const verification = await verifyCredential(env);
-    return { authenticated: true, validation: verification, source: "environment", fingerprint: cookieFingerprint(env) };
+    return { authenticated: true, validation: verification, source: "environment" };
   }
   const stored = await readCredential();
   if (!stored) return { authenticated: false, source: null };
@@ -133,7 +132,6 @@ export async function authStatus() {
     profile: stored.credential.profile,
     createdAt: stored.credential.createdAt,
     validatedAt: stored.credential.validatedAt,
-    fingerprint: cookieFingerprint(stored.credential.value),
   };
 }
 

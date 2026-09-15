@@ -29,8 +29,8 @@ function parseLastJson(stdout: string): unknown {
 export async function runLegacy(
   script: LegacyScript,
   args: string[],
-  options: { cookie?: string; timeoutMs?: number; passthrough?: boolean } = {},
-): Promise<{ data: unknown; stdout: string; stderr: string }> {
+  options: { cookie?: string; timeoutMs?: number } = {},
+): Promise<{ data: unknown }> {
   const root = await repositoryRoot();
   const file = path.join(root, "skills/lanhu-design/scripts", `${script}.mjs`);
   return new Promise((resolve, reject) => {
@@ -45,11 +45,11 @@ export async function runLegacy(
     });
     let stdout = "";
     let stderr = "";
-    child.stdout.on("data", (chunk) => { stdout += String(chunk); if (options.passthrough) process.stdout.write(chunk); });
-    child.stderr.on("data", (chunk) => { stderr += String(chunk); if (options.passthrough) process.stderr.write(redactSecrets(String(chunk))); });
+    child.stdout.on("data", (chunk) => { stdout += String(chunk); });
+    child.stderr.on("data", (chunk) => { stderr += String(chunk); });
     child.once("error", reject);
     child.once("close", (code) => {
-      if (code === 0) { resolve({ data: parseLastJson(stdout), stdout, stderr }); return; }
+      if (code === 0) { resolve({ data: parseLastJson(stdout) }); return; }
       const message = redactSecrets(stderr.trim() || stdout.trim() || `旧脚本退出码：${code}`);
       const errorCode = code === 2 ? "LANHU_INVALID_ARGUMENT" : /认证|cookie/i.test(message) ? "LANHU_AUTH_EXPIRED" : "LANHU_API_ERROR";
       reject(new LanhuError(errorCode, message, errorCode.startsWith("LANHU_AUTH") ? "运行：lanhu auth refresh 或 lanhu auth import" : undefined));

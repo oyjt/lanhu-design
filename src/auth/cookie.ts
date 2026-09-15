@@ -11,12 +11,6 @@ export function normalizeCookie(input: string): string {
   return value;
 }
 
-export function cookieFingerprint(cookie: string): string {
-  let hash = 2166136261;
-  for (const char of cookie) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  return (hash >>> 0).toString(16).padStart(8, "0").slice(-6);
-}
-
 export function redactSecrets(value: string): string {
   return value
     .replace(/(cookie\s*[:=]\s*)[^\r\n]+/gi, "$1<redacted>")

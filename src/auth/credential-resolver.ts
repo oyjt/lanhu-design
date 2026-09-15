@@ -1,14 +1,14 @@
 import { LanhuError } from "../errors/lanhu-error.js";
 import { readCredential } from "./credential-store.js";
 
-export async function resolveCredential(explicit?: string): Promise<{ cookie: string; source: string }> {
-  if (explicit?.trim()) return { cookie: explicit.trim(), source: "argument" };
+export async function resolveCredential(explicit?: string): Promise<string> {
+  if (explicit?.trim()) return explicit.trim();
   const envCookie = process.env.LANHU_COOKIE?.trim();
   if (envCookie && envCookie !== "your_lanhu_cookie_here") {
-    return { cookie: envCookie, source: "environment" };
+    return envCookie;
   }
   const stored = await readCredential();
-  if (stored) return { cookie: stored.credential.value, source: stored.credential.source };
+  if (stored) return stored.credential.value;
   throw new LanhuError(
     "LANHU_AUTH_REQUIRED",
     "未找到蓝湖登录凭据。",

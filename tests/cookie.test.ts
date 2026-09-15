@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cookieFingerprint, normalizeCookie, redactSecrets } from "../src/auth/cookie.js";
+import { normalizeCookie, redactSecrets } from "../src/auth/cookie.js";
 import { LanhuError } from "../src/errors/lanhu-error.js";
 
 describe("cookie utilities", () => {
@@ -11,9 +11,7 @@ describe("cookie utilities", () => {
     expect(() => normalizeCookie("not-a-cookie")).toThrow(LanhuError);
   });
 
-  it("redacts secrets and returns a stable short fingerprint", () => {
+  it("redacts secrets", () => {
     expect(redactSecrets("LANHU_COOKIE=secret-value")).toBe("LANHU_COOKIE=<redacted>");
-    expect(cookieFingerprint("a=1")).toMatch(/^[a-f0-9]{6}$/);
-    expect(cookieFingerprint("a=1")).toBe(cookieFingerprint("a=1"));
   });
 });
