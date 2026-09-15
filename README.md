@@ -2,7 +2,7 @@
 
 一个用于 [蓝湖](https://lanhuapp.com) UI 设计稿协作的 CLI 与 Agent Skill。让开发者和 AI 编码助手通过统一的 `lanhu` 命令完成登录、设计图读取、规格提取、切图下载和设计上下文导出。
 
-## CLI 安装
+## 推荐安装：CLI
 
 ```bash
 npm install -g lanhu-design
@@ -29,7 +29,7 @@ lanhu doctor --json
 
 凭据解析顺序为：显式 `--cookie`（仅调试）→ `LANHU_COOKIE` → CLI Credential Store。业务命令不会静默读取浏览器；只有显式的 `auth` 和 `auth refresh` 会读取浏览器会话。
 
-## Agent Skill 安装（兼容入口）
+## Agent Skill 独立安装（兼容入口）
 
 ```bash
 npx skills add oyjt/lanhu-design
