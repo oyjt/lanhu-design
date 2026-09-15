@@ -4,6 +4,7 @@
 
 ## 1.4.0 - Unreleased
 
+- 升级 Commander 15、TypeScript 7、Vitest 5、Node.js 类型及其余项目依赖到当前最新版；CLI 最低运行版本调整为 Node.js 22.12，并同步升级构建目标和 GitHub Actions。
 - 在同一仓库新增 `lanhu-design` TypeScript CLI，提供 `lanhu` 命令，同时保持 `skills/lanhu-design/` 独立安装和旧脚本入口兼容。
 - 新增 `auth/status/refresh/import/logout`、`doctor`、`env`、`config`、`designs`、`image`、`specs`、`slices`、`download`、`export` 命令。
 - `lanhu auth` 使用系统默认浏览器并通过隔离的 Cookie Reader Adapter 读取登录会话，不引入 Playwright；Windows 受限场景提供 `auth import` 正式兜底。

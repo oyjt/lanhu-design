@@ -1,12 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import { authenticate, keychainReadNotice } from "../src/auth/auth-manager.js";
-import type { BrowserTarget } from "../src/auth/browser-cookie-reader.js";
+import { readLanhuBrowserCookie, type BrowserTarget } from "../src/auth/browser-cookie-reader.js";
 import { LanhuError } from "../src/errors/lanhu-error.js";
 
 const target: BrowserTarget = { backend: "chrome", chromiumBrowser: "chrome", label: "Google Chrome" };
 const browserCookie = { cookie: "session=valid", source: "Google Chrome", profile: "Default", warnings: [] };
+type AuthenticationOverrides = NonNullable<Parameters<typeof authenticate>[1]>;
+type CookieReader = NonNullable<AuthenticationOverrides["readCookie"]>;
 
-function dependencies(readCookie: ReturnType<typeof vi.fn>) {
+function cookieReader(): Mock<CookieReader> {
+  return vi.fn<typeof readLanhuBrowserCookie>();
+}
+
+function dependencies(readCookie: Mock<CookieReader>) {
   return {
     readLocal: vi.fn().mockResolvedValue({ authenticated: false, source: null }),
     resolveTarget: vi.fn().mockResolvedValue(target),
@@ -15,7 +21,7 @@ function dependencies(readCookie: ReturnType<typeof vi.fn>) {
     waitForLogin: vi.fn().mockResolvedValue(undefined),
     verify: vi.fn().mockResolvedValue({ method: "cookie-format" as const }),
     write: vi.fn().mockResolvedValue(undefined),
-  };
+  } satisfies AuthenticationOverrides;
 }
 
 describe("browser authentication flow", () => {
@@ -26,7 +32,7 @@ describe("browser authentication flow", () => {
   });
 
   it("uses a saved CLI credential without touching the browser or Keychain", async () => {
-    const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
+    const deps = dependencies(cookieReader().mockResolvedValue(browserCookie));
     deps.readLocal.mockResolvedValue({
       authenticated: true,
       source: "Google Chrome",
@@ -42,7 +48,7 @@ describe("browser authentication flow", () => {
   });
 
   it("bypasses a saved credential when refresh forces browser login", async () => {
-    const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
+    const deps = dependencies(cookieReader().mockResolvedValue(browserCookie));
     deps.readLocal.mockResolvedValue({ authenticated: true, source: "Google Chrome" });
     const result = await authenticate({ timeout: 120_000, open: true, forceLogin: true }, deps);
     expect(result.flow).toBe("browser-login");
@@ -52,7 +58,7 @@ describe("browser authentication flow", () => {
   });
 
   it("uses an existing browser login without opening a page", async () => {
-    const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
+    const deps = dependencies(cookieReader().mockResolvedValue(browserCookie));
     const result = await authenticate({ timeout: 120_000, open: true }, deps);
     expect(result.flow).toBe("existing-cookie");
     expect(deps.readCookie).toHaveBeenCalledTimes(1);
@@ -60,7 +66,7 @@ describe("browser authentication flow", () => {
   });
 
   it("opens the browser and retries when no login exists", async () => {
-    const readCookie = vi.fn()
+    const readCookie = cookieReader()
       .mockRejectedValueOnce(new LanhuError("LANHU_AUTH_REQUIRED", "not logged in"))
       .mockResolvedValueOnce(browserCookie);
     const deps = dependencies(readCookie);
@@ -72,7 +78,7 @@ describe("browser authentication flow", () => {
   });
 
   it("does not retry when the system blocks cookie decryption", async () => {
-    const readCookie = vi.fn().mockRejectedValue(new LanhuError("LANHU_PERMISSION_DENIED", "blocked"));
+    const readCookie = cookieReader().mockRejectedValue(new LanhuError("LANHU_PERMISSION_DENIED", "blocked"));
     const deps = dependencies(readCookie);
     await expect(authenticate({ timeout: 120_000, open: true }, deps)).rejects.toMatchObject({ code: "LANHU_PERMISSION_DENIED" });
     expect(readCookie).toHaveBeenCalledTimes(1);

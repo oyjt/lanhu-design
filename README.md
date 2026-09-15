@@ -16,7 +16,7 @@
 
 ## 环境要求
 
-- Node.js 20 或更高版本
+- Node.js 22.12 或更高版本
 - macOS、Windows 或 Linux
 - 能够访问 `lanhuapp.com` 的网络环境
 - 已加入对应蓝湖项目的账号
