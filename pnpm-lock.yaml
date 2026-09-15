@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      '@steipete/sweet-cookie':
+        specifier: ^0.4.3
+        version: 0.4.3
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -191,10 +194,6 @@ importers:
       vitest:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@26.5.1)(vite@7.3.6(@types/node@26.5.1)(tsx@4.23.13))
-    optionalDependencies:
-      '@steipete/sweet-cookie':
-        specifier: ^0.4.3
-        version: 0.4.3
 
 packages:
 
@@ -1446,8 +1445,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.2':
     optional: true
 
-  '@steipete/sweet-cookie@0.4.3':
-    optional: true
+  '@steipete/sweet-cookie@0.4.3': {}
 
   '@types/chai@5.2.3':
     dependencies:

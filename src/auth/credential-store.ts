@@ -35,6 +35,7 @@ export async function writeCredential(cookie: string, source: string, profile?: 
     version: 1,
     credential: { type: "cookie", value: cookie, source, profile, createdAt: now, validatedAt: now },
   };
+  // 先写临时文件再原子替换，避免进程中断后留下半写入的凭据文件。
   const temporary = `${credentialPath}.${process.pid}.tmp`;
   await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   await chmod(temporary, 0o600).catch(() => undefined);

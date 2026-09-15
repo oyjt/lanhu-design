@@ -16,6 +16,7 @@ function findCookie(cookie: string, name: string): string | undefined {
 }
 
 export async function verifyCredential(cookie: string): Promise<CredentialVerification> {
+  // 无项目上下文时只做本地检查，真实服务端权限由后续业务请求确认。
   const token = findCookie(cookie, "user_token");
   if (!token) return { method: "cookie-format" };
   const payload = token.split(".")[1];

@@ -62,6 +62,7 @@ export async function authenticate(options: {
   };
 
   if (!options.forceLogin) {
+    // 优先复用 CLI 已有凭据，避免不必要地访问浏览器 Cookie 和 macOS Keychain。
     try {
       const local = await dependencies.readLocal();
       if (local.authenticated) return { ...local, flow: "saved-credential" as const, warnings: [] };
@@ -73,6 +74,7 @@ export async function authenticate(options: {
   const target = await dependencies.resolveTarget(options.browser);
 
   const attempt = async (flow: "existing-cookie" | "browser-login") => {
+    // 每次可能访问 Keychain 前先告知用户，避免系统授权窗口突然出现。
     const notice = keychainReadNotice(target);
     if (notice) options.onStatus?.(notice);
     const result = await dependencies.readCookie({ ...options, target });
@@ -102,6 +104,7 @@ export async function authenticate(options: {
   if (!options.open) {
     throw new LanhuError("LANHU_AUTH_REQUIRED", "当前没有可用的蓝湖浏览器登录态。", "移除 --no-open 后重试，或运行：lanhu auth import");
   }
+  // 仅在本地凭据和现有浏览器登录态都不可用时，才打开登录页面。
   await dependencies.openBrowser("https://lanhuapp.com/");
   await dependencies.waitForLogin(options.timeout, target.label);
   return attempt("browser-login");

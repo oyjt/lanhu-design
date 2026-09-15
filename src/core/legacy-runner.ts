@@ -12,16 +12,16 @@ async function repositoryRoot(): Promise<string> {
   const candidates = [path.resolve(here, "../.."), path.resolve(here, "..")];
   for (const candidate of candidates) {
     try { await access(path.join(candidate, "skills/lanhu-design/scripts/lanhu-client.mjs")); return candidate; }
-    catch { /* try next */ }
+    catch { /* 当前路径不可用时继续尝试下一个候选路径。 */ }
   }
   throw new LanhuError("LANHU_INTERNAL_ERROR", "npm 包中缺少 Skill runtime。请重新安装 lanhu-design。");
 }
 
 function parseLastJson(stdout: string): unknown {
   const trimmed = stdout.trim();
-  try { return JSON.parse(trimmed); } catch { /* mixed progress and JSON */ }
+  try { return JSON.parse(trimmed); } catch { /* 输出可能同时包含进度文本和 JSON。 */ }
   for (let index = trimmed.lastIndexOf("\n{"); index >= 0; index = trimmed.lastIndexOf("\n{", index - 1)) {
-    try { return JSON.parse(trimmed.slice(index + 1)); } catch { /* try previous */ }
+    try { return JSON.parse(trimmed.slice(index + 1)); } catch { /* 当前片段无效时继续向前查找。 */ }
   }
   return trimmed;
 }

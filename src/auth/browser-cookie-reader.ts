@@ -58,7 +58,7 @@ async function resolveChromiumProfile(target: BrowserTarget, explicitProfile?: s
     const state = await readFile(path.join(homedir(), "Library", "Application Support", ...root, "Local State"), "utf8");
     return parseLastUsedProfile(state) ?? "Default";
   } catch {
-    // Limit the read to one database even when Local State is temporarily unavailable.
+    // Local State 暂时不可用时仍只读取默认 Profile，避免遍历多个数据库并重复触发钥匙串授权。
     return "Default";
   }
 }
