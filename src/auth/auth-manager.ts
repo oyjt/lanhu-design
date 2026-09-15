@@ -38,30 +38,30 @@ export async function authenticate(options: {
   if (options.open) await waitForLogin(options.timeout, target.label);
   const result = await readLanhuBrowserCookie({ ...options, target });
   const cookie = normalizeCookie(result.cookie);
-  await verifyCredential(cookie);
+  const verification = await verifyCredential(cookie);
   await writeCredential(cookie, result.source, result.profile);
-  return { authenticated: true, source: result.source, profile: result.profile, fingerprint: cookieFingerprint(cookie), warnings: result.warnings };
+  return { authenticated: true, source: result.source, profile: result.profile, validation: verification, fingerprint: cookieFingerprint(cookie), warnings: result.warnings };
 }
 
 export async function importCredential(cookieInput: string) {
   const cookie = normalizeCookie(cookieInput);
-  await verifyCredential(cookie);
+  const verification = await verifyCredential(cookie);
   await writeCredential(cookie, "manual-import");
-  return { authenticated: true, source: "manual-import", fingerprint: cookieFingerprint(cookie) };
+  return { authenticated: true, source: "manual-import", validation: verification, fingerprint: cookieFingerprint(cookie) };
 }
 
-export async function authStatus(verifyRemote = false) {
+export async function authStatus() {
   const env = process.env.LANHU_COOKIE?.trim();
   if (env && env !== "your_lanhu_cookie_here") {
-    if (verifyRemote) await verifyCredential(env);
-    return { authenticated: true, remoteValidated: verifyRemote, source: "environment", fingerprint: cookieFingerprint(env) };
+    const verification = await verifyCredential(env);
+    return { authenticated: true, validation: verification, source: "environment", fingerprint: cookieFingerprint(env) };
   }
   const stored = await readCredential();
   if (!stored) return { authenticated: false, source: null };
-  if (verifyRemote) await verifyCredential(stored.credential.value);
+  const verification = await verifyCredential(stored.credential.value);
   return {
     authenticated: true,
-    remoteValidated: verifyRemote,
+    validation: verification,
     source: stored.credential.source,
     profile: stored.credential.profile,
     createdAt: stored.credential.createdAt,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapBrowser } from "../src/auth/browser-cookie-reader.js";
+import { mapBrowser, parseLastUsedProfile } from "../src/auth/browser-cookie-reader.js";
 
 describe("browser target mapping", () => {
   it.each([
@@ -19,5 +19,10 @@ describe("browser target mapping", () => {
 
   it("rejects unknown browsers", () => {
     expect(mapBrowser("com.example.unknown")).toBeNull();
+  });
+
+  it("reads the most recently used Chromium profile", () => {
+    expect(parseLastUsedProfile(JSON.stringify({ profile: { last_used: "Profile 2" } }))).toBe("Profile 2");
+    expect(parseLastUsedProfile("invalid json")).toBeUndefined();
   });
 });
