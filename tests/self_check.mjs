@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -62,6 +62,28 @@ async function checkSkillPackage() {
   ], { encoding: "utf8" });
   assert.equal(help.status, 0, help.stderr || help.stdout);
   assert.match(help.stdout, /usage:/);
+}
+
+async function checkStandaloneSkillRuntime() {
+  const temporary = await mkdtemp(path.join(tmpdir(), "lanhu-skill-"));
+  const standalone = path.join(temporary, "lanhu-design");
+  try {
+    await cp(skillRoot, standalone, { recursive: true });
+    const scripts = [
+      "get_designs.mjs",
+      "download_design_images.mjs",
+      "get_design_specs.mjs",
+      "get_design_slices.mjs",
+      "download_slices.mjs",
+    ];
+    for (const script of scripts) {
+      const result = spawnSync(process.execPath, [path.join(standalone, "scripts", script), "--help"], { encoding: "utf8" });
+      assert.equal(result.status, 0, `${script}: ${result.stderr || result.stdout}`);
+      assert.match(result.stdout, /usage:/i, script);
+    }
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 }
 
 function checkHtmlEscaping() {
@@ -392,6 +414,7 @@ async function checkScaleFallback() {
 }
 
 await checkSkillPackage();
+await checkStandaloneSkillRuntime();
 checkHtmlEscaping();
 checkSketchAnnotations();
 checkFigmaArtboardScale();

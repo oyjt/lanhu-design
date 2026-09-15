@@ -1,14 +1,39 @@
 # lanhu-design
 
-一个用于 [蓝湖](https://lanhuapp.com) UI 设计稿协作的 Agent 技能。让 AI 编码助手能够列出设计图、下载设计图进行视觉分析、提取切图/图标/素材元数据，并批量下载切图到项目中。
+一个用于 [蓝湖](https://lanhuapp.com) UI 设计稿协作的 CLI 与 Agent Skill。让开发者和 AI 编码助手通过统一的 `lanhu` 命令完成登录、设计图读取、规格提取、切图下载和设计上下文导出。
 
-## 安装
+## CLI 安装
+
+```bash
+npm install -g @oyjt/lanhu-design
+lanhu --version
+lanhu auth
+```
+
+`lanhu auth` 会打开系统默认浏览器中的蓝湖登录页，并在用户登录后读取 `lanhuapp.com` Cookie。CLI 不会启动或控制内置浏览器，也不依赖 Playwright。Windows 新版 Chrome/Edge 若受 App-Bound Encryption 限制，可改用 Firefox，或执行 `lanhu auth import` 隐藏输入 Cookie。
+
+常用命令：
+
+```bash
+lanhu auth status
+lanhu designs "$LANHU_URL" --json
+lanhu image "$LANHU_URL" --design 首页 --output .lanhu/images
+lanhu specs "$LANHU_URL" --design 首页 --output .lanhu/specs --download-images
+lanhu slices "$LANHU_URL" --design 首页 --output .lanhu/slices.json
+lanhu download .lanhu/slices.json --output src/assets --scale 2x
+lanhu export "$LANHU_URL" --design 首页 --output .lanhu --json
+lanhu doctor --json
+```
+
+凭据解析顺序为：显式 `--cookie`（仅调试）→ `LANHU_COOKIE` → CLI Credential Store。业务命令不会静默读取浏览器；只有显式的 `auth` 和 `auth refresh` 会读取浏览器会话。
+
+## Agent Skill 安装（兼容入口）
 
 ```bash
 npx skills add oyjt/lanhu-design
 ```
 
-技能运行文件位于 `skills/lanhu-design/`。根目录的 `README.md`、`LICENSE`、`tests/` 只用于仓库说明和开发校验，不属于安装后的技能内容。
+技能运行文件仍位于 `skills/lanhu-design/`，可以不安装 CLI 独立运行。原脚本路径与 `LANHU_COOKIE` 行为保持兼容。
 技能目录自身包含 `LICENSE.txt`、Codex/ChatGPT 展示元数据和 `evals/evals.json`，可随安装包独立分发和评测。
 
 ## 版本
@@ -19,9 +44,9 @@ npx skills add oyjt/lanhu-design
 - 安装指定版本：`npx skills add oyjt/lanhu-design#v1.0.0`
 - 查看所有版本：`git ls-remote --tags https://github.com/oyjt/lanhu-design`
 
-## 前置条件
+## Skill 独立运行的前置条件
 
-- **Node.js >= 18**（使用原生 `fetch`）
+- **Node.js >= 18**（CLI 要求 Node.js >= 20）
 - **`LANHU_COOKIE` 环境变量** — 蓝湖没有公开 API，脚本通过浏览器会话 Cookie 进行认证。
 
 ### 获取 Cookie
@@ -195,6 +220,8 @@ AI 会自动：
 ## 开发校验
 
 ```bash
+corepack pnpm install
+corepack pnpm check
 node tests/self_check.mjs
 npx skills-ref validate skills/lanhu-design
 ```

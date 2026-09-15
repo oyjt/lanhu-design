@@ -2,6 +2,14 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## 1.4.0 - Unreleased
+
+- 在同一仓库新增 `@oyjt/lanhu-design` TypeScript CLI，提供 `lanhu` 命令，同时保持 `skills/lanhu-design/` 独立安装和旧脚本入口兼容。
+- 新增 `auth/status/refresh/import/logout`、`doctor`、`env`、`config`、`designs`、`image`、`specs`、`slices`、`download`、`export` 命令。
+- `lanhu auth` 使用系统默认浏览器并通过隔离的 Cookie Reader Adapter 读取登录会话，不引入 Playwright；Windows 受限场景提供 `auth import` 正式兜底。
+- 新增原子凭据存储、Secret Redactor、JSON envelope、稳定错误码与退出码。
+- CLI 业务命令复用现有 Skill runtime；Skill 未安装 CLI 时仍可直接使用 `LANHU_COOKIE` 和原脚本。
+
 ## 1.3.1 - 2026-09-11
 
 - 修复 Figma 编组带 `image` 字段（无 `hasExportImage`）时被当作容器递归展开成矢量碎片：切图层识别改为 `image.imageUrl`/`svgUrl` 存在即整体作为一张切图，HTML 渲染与标注提取共用同一判断。
