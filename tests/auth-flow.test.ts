@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { authenticate } from "../src/auth/auth-manager.js";
+import { authenticate, keychainReadNotice } from "../src/auth/auth-manager.js";
 import type { BrowserTarget } from "../src/auth/browser-cookie-reader.js";
 import { LanhuError } from "../src/errors/lanhu-error.js";
 
@@ -19,6 +19,12 @@ function dependencies(readCookie: ReturnType<typeof vi.fn>) {
 }
 
 describe("browser authentication flow", () => {
+  it("warns before a macOS Chromium Keychain read", () => {
+    expect(keychainReadNotice(target, "darwin")).toContain("macOS 可能弹出钥匙串授权窗口");
+    expect(keychainReadNotice({ backend: "safari", label: "Safari" }, "darwin")).toBeUndefined();
+    expect(keychainReadNotice(target, "win32")).toBeUndefined();
+  });
+
   it("uses a saved CLI credential without touching the browser or Keychain", async () => {
     const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
     deps.readLocal.mockResolvedValue({

@@ -37,12 +37,18 @@ async function waitForLogin(timeout: number, browser: string): Promise<void> {
   }
 }
 
+export function keychainReadNotice(target: { backend: string; label: string }, platform = process.platform): string | undefined {
+  if (platform !== "darwin" || !["chrome", "edge"].includes(target.backend)) return undefined;
+  return `即将读取 ${target.label} 登录态，macOS 可能弹出钥匙串授权窗口。这是解密浏览器 Cookie 所需的系统授权，请选择“允许”或“始终允许”。`;
+}
+
 export async function authenticate(options: {
   browser?: string;
   profile?: string;
   timeout: number;
   open: boolean;
   forceLogin?: boolean;
+  onStatus?: (message: string) => void;
 }, overrides: Partial<AuthenticationDependencies> = {}) {
   const dependencies: AuthenticationDependencies = {
     readLocal: authStatus,
@@ -67,6 +73,8 @@ export async function authenticate(options: {
   const target = await dependencies.resolveTarget(options.browser);
 
   const attempt = async (flow: "existing-cookie" | "browser-login") => {
+    const notice = keychainReadNotice(target);
+    if (notice) options.onStatus?.(notice);
     const result = await dependencies.readCookie({ ...options, target });
     const cookie = normalizeCookie(result.cookie);
     const verification = await dependencies.verify(cookie);

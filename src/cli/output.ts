@@ -7,7 +7,11 @@ export class Output {
   private readonly startedAt = Date.now();
   constructor(private readonly command: string, private readonly version: string, private readonly options: OutputOptions) {}
 
-  success(data: unknown, warnings: string[] = []): void {
+  status(message: string): void {
+    if (!this.options.json && !this.options.quiet) console.error(redactSecrets(message));
+  }
+
+  success(data: unknown, warnings: string[] = [], humanMessage?: string): void {
     if (this.options.json) {
       console.log(JSON.stringify({
         ok: true,
@@ -15,6 +19,11 @@ export class Output {
         meta: { command: this.command, version: this.version, durationMs: Date.now() - this.startedAt, warnings },
         error: null,
       }, null, 2));
+      return;
+    }
+    if (humanMessage !== undefined) {
+      if (!this.options.quiet) console.log(redactSecrets(humanMessage));
+      for (const warning of warnings) console.error(`警告：${redactSecrets(warning)}`);
       return;
     }
     if (this.options.quiet && (data === undefined || data === null)) return;

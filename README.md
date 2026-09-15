@@ -14,6 +14,8 @@ lanhu auth
 
 首次使用且 CLI 尚未保存凭据时，Chromium Cookie 解密仍可能触发一次系统授权，这是读取浏览器登录态所必需的。后续执行普通 `lanhu auth` 会复用已保存凭据；需要强制重新读取浏览器时使用 `lanhu auth refresh`。
 
+普通终端模式会输出“已登录”或“登录成功”等可读提示，并在已有凭据时给出 `lanhu auth refresh` 引导；只有显式添加 `--json` 才输出结构化 JSON。macOS 每次可能访问 Chromium Keychain 前，CLI 都会先说明弹窗用途，避免系统授权窗口突然出现。
+
 认证命令仅在本地检查 Cookie 格式和可识别令牌的过期时间，不调用未经保证的“用户信息”探测接口；服务器端权限和有效性会在首次带有真实蓝湖项目地址的业务命令中确认。
 
 如果 macOS Keychain、Windows App-Bound Encryption 等系统机制禁止 Cookie 解密，CLI 会停止重试并提示兜底方案：使用浏览器 Extension 导出 `lanhuapp.com` Cookie，再运行 `lanhu auth import` 隐藏输入。Extension 负责导出，CLI 不要求 Extension 将凭据写入环境变量。
