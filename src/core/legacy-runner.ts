@@ -14,7 +14,7 @@ async function repositoryRoot(): Promise<string> {
     try { await access(path.join(candidate, "skills/lanhu-design/scripts/lanhu-client.mjs")); return candidate; }
     catch { /* try next */ }
   }
-  throw new LanhuError("LANHU_INTERNAL_ERROR", "npm 包中缺少 Skill runtime。请重新安装 @oyjt/lanhu-design。");
+  throw new LanhuError("LANHU_INTERNAL_ERROR", "npm 包中缺少 Skill runtime。请重新安装 lanhu-design。");
 }
 
 function parseLastJson(stdout: string): unknown {

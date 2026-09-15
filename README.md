@@ -5,7 +5,7 @@
 ## CLI 安装
 
 ```bash
-npm install -g @oyjt/lanhu-design
+npm install -g lanhu-design
 lanhu --version
 lanhu auth
 ```

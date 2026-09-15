@@ -1,5 +1,5 @@
 {
-  "name": "@oyjt/lanhu-design",
+  "name": "lanhu-design",
   "version": "1.4.0",
   "description": "Lanhu design handoff CLI and Agent Skill",
   "type": "module",

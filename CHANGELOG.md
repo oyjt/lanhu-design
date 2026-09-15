@@ -4,7 +4,7 @@
 
 ## 1.4.0 - Unreleased
 
-- 在同一仓库新增 `@oyjt/lanhu-design` TypeScript CLI，提供 `lanhu` 命令，同时保持 `skills/lanhu-design/` 独立安装和旧脚本入口兼容。
+- 在同一仓库新增 `lanhu-design` TypeScript CLI，提供 `lanhu` 命令，同时保持 `skills/lanhu-design/` 独立安装和旧脚本入口兼容。
 - 新增 `auth/status/refresh/import/logout`、`doctor`、`env`、`config`、`designs`、`image`、`specs`、`slices`、`download`、`export` 命令。
 - `lanhu auth` 使用系统默认浏览器并通过隔离的 Cookie Reader Adapter 读取登录会话，不引入 Playwright；Windows 受限场景提供 `auth import` 正式兜底。
 - 新增原子凭据存储、Secret Redactor、JSON envelope、稳定错误码与退出码。
