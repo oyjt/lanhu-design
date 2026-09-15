@@ -66,6 +66,11 @@ lanhu designs $env:LANHU_URL
 | `lanhu auth import` | 手动导入 Cookie |
 | `lanhu auth logout` | 删除 CLI 保存的凭据 |
 
+登录凭据与 CLI 配置统一保存在用户主目录：
+
+- macOS / Linux：`~/.config/lanhu-design/credentials.json`
+- Windows：`%USERPROFILE%\.config\lanhu-design\credentials.json`
+
 正常情况下只需要执行一次 `lanhu auth`。如果业务命令提示登录过期，请运行：
 
 ```bash

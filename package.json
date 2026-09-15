@@ -28,7 +28,6 @@
   "dependencies": {
     "commander": "^14.0.1",
     "default-browser": "^5.5.1",
-    "env-paths": "^3.0.0",
     "zod": "^4.1.8"
   },
   "optionalDependencies": {
