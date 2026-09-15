@@ -1,9 +1,31 @@
-import { setTimeout as delay } from "node:timers/promises";
+import { createInterface } from "node:readline/promises";
 import { cookieFingerprint, normalizeCookie } from "./cookie.js";
 import { deleteCredential, readCredential, writeCredential } from "./credential-store.js";
 import { openDefaultBrowser } from "./default-browser.js";
-import { readLanhuBrowserCookie } from "./browser-cookie-reader.js";
+import { readLanhuBrowserCookie, resolveBrowserTarget } from "./browser-cookie-reader.js";
 import { verifyCredential } from "./credential-verifier.js";
+import { LanhuError } from "../errors/lanhu-error.js";
+
+async function waitForLogin(timeout: number, browser: string): Promise<void> {
+  if (!process.stdin.isTTY) return;
+  const readline = createInterface({ input: process.stdin, output: process.stdout });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    await readline.question(
+      `已在 ${browser} 中打开蓝湖。完成登录后回到这里按 Enter，随后可能出现一次钥匙串授权提示：`,
+      { signal: controller.signal },
+    );
+  } catch (error) {
+    if ((error as Error).name === "AbortError") {
+      throw new LanhuError("LANHU_AUTH_UNREADABLE", "等待蓝湖登录确认超时。", "重新运行 lanhu auth，或使用 lanhu auth import。", true);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    readline.close();
+  }
+}
 
 export async function authenticate(options: {
   browser?: string;
@@ -11,22 +33,14 @@ export async function authenticate(options: {
   timeout: number;
   open: boolean;
 }) {
+  const target = await resolveBrowserTarget(options.browser);
   if (options.open) await openDefaultBrowser("https://lanhuapp.com/");
-  const deadline = Date.now() + options.timeout;
-  let lastError: unknown;
-  while (Date.now() < deadline) {
-    try {
-      const result = await readLanhuBrowserCookie(options);
-      const cookie = normalizeCookie(result.cookie);
-      await verifyCredential(cookie);
-      await writeCredential(cookie, result.source, result.profile);
-      return { authenticated: true, source: result.source, profile: result.profile, fingerprint: cookieFingerprint(cookie), warnings: result.warnings };
-    } catch (error) {
-      lastError = error;
-      await delay(Math.min(1500, Math.max(0, deadline - Date.now())));
-    }
-  }
-  throw lastError;
+  if (options.open) await waitForLogin(options.timeout, target.label);
+  const result = await readLanhuBrowserCookie({ ...options, target });
+  const cookie = normalizeCookie(result.cookie);
+  await verifyCredential(cookie);
+  await writeCredential(cookie, result.source, result.profile);
+  return { authenticated: true, source: result.source, profile: result.profile, fingerprint: cookieFingerprint(cookie), warnings: result.warnings };
 }
 
 export async function importCredential(cookieInput: string) {

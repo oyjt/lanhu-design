@@ -10,7 +10,7 @@ lanhu --version
 lanhu auth
 ```
 
-`lanhu auth` 会打开系统默认浏览器中的蓝湖登录页，并在登录完成后读取蓝湖会话信息。该过程不会创建额外的浏览器实例。
+`lanhu auth` 会打开系统默认浏览器中的蓝湖登录页。登录完成后回到终端按 Enter，CLI 将读取一次蓝湖会话信息；macOS 使用 Chrome 等 Chromium 浏览器时，系统可能随即显示一次钥匙串授权提示。该过程不会创建额外的浏览器实例。
 
 Windows 新版 Chrome/Edge 可能因系统安全机制无法读取登录会话，此时可改用 Firefox，或执行 `lanhu auth import` 手动导入 Cookie。
 

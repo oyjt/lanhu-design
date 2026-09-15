@@ -123,7 +123,7 @@ export function createProgram(): Command {
 
   const auth = program.command("auth").description("从系统默认浏览器授权蓝湖登录");
   auth
-    .option("--browser <browser>", "chrome/edge/firefox/safari")
+    .option("--browser <browser>", "chrome/edge/brave/arc/dia/chromium/firefox/safari")
     .option("--profile <profile>", "浏览器 Profile")
     .option("--timeout <seconds>", "等待登录秒数", "120")
     .option("--no-open", "不打开浏览器")
