@@ -7,6 +7,7 @@ import { verifyCredential } from "./credential-verifier.js";
 import { LanhuError } from "../errors/lanhu-error.js";
 
 interface AuthenticationDependencies {
+  readLocal: typeof authStatus;
   resolveTarget: typeof resolveBrowserTarget;
   readCookie: typeof readLanhuBrowserCookie;
   openBrowser: typeof openDefaultBrowser;
@@ -44,6 +45,7 @@ export async function authenticate(options: {
   forceLogin?: boolean;
 }, overrides: Partial<AuthenticationDependencies> = {}) {
   const dependencies: AuthenticationDependencies = {
+    readLocal: authStatus,
     resolveTarget: resolveBrowserTarget,
     readCookie: readLanhuBrowserCookie,
     openBrowser: openDefaultBrowser,
@@ -52,6 +54,16 @@ export async function authenticate(options: {
     write: writeCredential,
     ...overrides,
   };
+
+  if (!options.forceLogin) {
+    try {
+      const local = await dependencies.readLocal();
+      if (local.authenticated) return { ...local, flow: "saved-credential" as const, warnings: [] };
+    } catch (error) {
+      if (!(error instanceof LanhuError) || error.code !== "LANHU_AUTH_EXPIRED") throw error;
+    }
+  }
+
   const target = await dependencies.resolveTarget(options.browser);
 
   const attempt = async (flow: "existing-cookie" | "browser-login") => {

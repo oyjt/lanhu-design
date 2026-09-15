@@ -10,6 +10,7 @@
 - macOS 认证会锁定系统默认浏览器及其最近使用的 Profile，只访问一次对应的 Safe Storage 钥匙串项，避免按多个 Profile 重复弹出授权窗口。
 - 登录阶段改为本地检查 Cookie 格式和可识别令牌的过期时间，移除不可靠的蓝湖用户/项目列表探测端点；服务器端有效性由实际业务请求确认。
 - `lanhu auth` 改为先复用现有浏览器登录态，仅在未登录或令牌过期时打开默认浏览器并重试；系统禁止 Cookie 解密时立即转入 Extension/`auth import` 兜底，不再重复尝试。
+- `lanhu auth` 在访问浏览器前优先复用 `LANHU_COOKIE` 或 CLI Credential Store，已有有效凭据时完全绕过 Chromium Cookie 与 Keychain；`auth refresh` 继续用于强制刷新浏览器会话。
 - 新增原子凭据存储、Secret Redactor、JSON envelope、稳定错误码与退出码。
 - CLI 业务命令复用现有 Skill runtime；Skill 未安装 CLI 时仍可直接使用 `LANHU_COOKIE` 和原脚本。
 

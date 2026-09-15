@@ -8,6 +8,7 @@ const browserCookie = { cookie: "session=valid", source: "Google Chrome", profil
 
 function dependencies(readCookie: ReturnType<typeof vi.fn>) {
   return {
+    readLocal: vi.fn().mockResolvedValue({ authenticated: false, source: null }),
     resolveTarget: vi.fn().mockResolvedValue(target),
     readCookie,
     openBrowser: vi.fn().mockResolvedValue(undefined),
@@ -18,6 +19,32 @@ function dependencies(readCookie: ReturnType<typeof vi.fn>) {
 }
 
 describe("browser authentication flow", () => {
+  it("uses a saved CLI credential without touching the browser or Keychain", async () => {
+    const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
+    deps.readLocal.mockResolvedValue({
+      authenticated: true,
+      source: "Google Chrome",
+      profile: "Default",
+      validation: { method: "cookie-format" },
+      fingerprint: "abc123",
+    });
+    const result = await authenticate({ timeout: 120_000, open: true }, deps);
+    expect(result.flow).toBe("saved-credential");
+    expect(deps.resolveTarget).not.toHaveBeenCalled();
+    expect(deps.readCookie).not.toHaveBeenCalled();
+    expect(deps.openBrowser).not.toHaveBeenCalled();
+  });
+
+  it("bypasses a saved credential when refresh forces browser login", async () => {
+    const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
+    deps.readLocal.mockResolvedValue({ authenticated: true, source: "Google Chrome" });
+    const result = await authenticate({ timeout: 120_000, open: true, forceLogin: true }, deps);
+    expect(result.flow).toBe("browser-login");
+    expect(deps.readLocal).not.toHaveBeenCalled();
+    expect(deps.openBrowser).toHaveBeenCalledOnce();
+    expect(deps.readCookie).toHaveBeenCalledOnce();
+  });
+
   it("uses an existing browser login without opening a page", async () => {
     const deps = dependencies(vi.fn().mockResolvedValue(browserCookie));
     const result = await authenticate({ timeout: 120_000, open: true }, deps);

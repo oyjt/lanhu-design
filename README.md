@@ -10,7 +10,9 @@ lanhu --version
 lanhu auth
 ```
 
-`lanhu auth` 会先读取默认浏览器最近使用的 Profile：已有蓝湖登录态时直接检查并保存 Cookie，不再打开网页；未找到登录态时才打开 `https://lanhuapp.com`，等待用户登录后重新读取。如自动识别的 Profile 不正确，可显式执行 `lanhu auth --browser chrome --profile "Profile 1"`。
+`lanhu auth` 会先检查现有 `LANHU_COOKIE` 和 CLI Credential Store；凭据仍有效时直接成功，不读取浏览器，因此不会触发 Keychain。仅当本地没有可用凭据时，才读取默认浏览器最近使用的 Profile；浏览器也未登录时，再打开 `https://lanhuapp.com`，等待用户登录后重新读取。如自动识别的 Profile 不正确，可显式执行 `lanhu auth --browser chrome --profile "Profile 1"`。
+
+首次使用且 CLI 尚未保存凭据时，Chromium Cookie 解密仍可能触发一次系统授权，这是读取浏览器登录态所必需的。后续执行普通 `lanhu auth` 会复用已保存凭据；需要强制重新读取浏览器时使用 `lanhu auth refresh`。
 
 认证命令仅在本地检查 Cookie 格式和可识别令牌的过期时间，不调用未经保证的“用户信息”探测接口；服务器端权限和有效性会在首次带有真实蓝湖项目地址的业务命令中确认。
 
