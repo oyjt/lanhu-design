@@ -6,6 +6,15 @@ import { readLanhuBrowserCookie, resolveBrowserTarget } from "./browser-cookie-r
 import { verifyCredential } from "./credential-verifier.js";
 import { LanhuError } from "../errors/lanhu-error.js";
 
+interface AuthenticationDependencies {
+  resolveTarget: typeof resolveBrowserTarget;
+  readCookie: typeof readLanhuBrowserCookie;
+  openBrowser: typeof openDefaultBrowser;
+  waitForLogin: typeof waitForLogin;
+  verify: typeof verifyCredential;
+  write: typeof writeCredential;
+}
+
 async function waitForLogin(timeout: number, browser: string): Promise<void> {
   if (!process.stdin.isTTY) return;
   const readline = createInterface({ input: process.stdin, output: process.stdout });
@@ -13,7 +22,7 @@ async function waitForLogin(timeout: number, browser: string): Promise<void> {
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     await readline.question(
-      `已在 ${browser} 中打开蓝湖。完成登录后回到这里按 Enter，随后可能出现一次钥匙串授权提示：`,
+      `已在 ${browser} 中打开蓝湖。完成登录后回到这里按 Enter，CLI 将再次读取登录态：`,
       { signal: controller.signal },
     );
   } catch (error) {
@@ -32,15 +41,50 @@ export async function authenticate(options: {
   profile?: string;
   timeout: number;
   open: boolean;
-}) {
-  const target = await resolveBrowserTarget(options.browser);
-  if (options.open) await openDefaultBrowser("https://lanhuapp.com/");
-  if (options.open) await waitForLogin(options.timeout, target.label);
-  const result = await readLanhuBrowserCookie({ ...options, target });
-  const cookie = normalizeCookie(result.cookie);
-  const verification = await verifyCredential(cookie);
-  await writeCredential(cookie, result.source, result.profile);
-  return { authenticated: true, source: result.source, profile: result.profile, validation: verification, fingerprint: cookieFingerprint(cookie), warnings: result.warnings };
+  forceLogin?: boolean;
+}, overrides: Partial<AuthenticationDependencies> = {}) {
+  const dependencies: AuthenticationDependencies = {
+    resolveTarget: resolveBrowserTarget,
+    readCookie: readLanhuBrowserCookie,
+    openBrowser: openDefaultBrowser,
+    waitForLogin,
+    verify: verifyCredential,
+    write: writeCredential,
+    ...overrides,
+  };
+  const target = await dependencies.resolveTarget(options.browser);
+
+  const attempt = async (flow: "existing-cookie" | "browser-login") => {
+    const result = await dependencies.readCookie({ ...options, target });
+    const cookie = normalizeCookie(result.cookie);
+    const verification = await dependencies.verify(cookie);
+    await dependencies.write(cookie, result.source, result.profile);
+    return {
+      authenticated: true,
+      flow,
+      source: result.source,
+      profile: result.profile,
+      validation: verification,
+      fingerprint: cookieFingerprint(cookie),
+      warnings: result.warnings,
+    };
+  };
+
+  if (!options.forceLogin) {
+    try {
+      return await attempt("existing-cookie");
+    } catch (error) {
+      const canLogin = error instanceof LanhuError && ["LANHU_AUTH_REQUIRED", "LANHU_AUTH_EXPIRED"].includes(error.code);
+      if (!canLogin || !options.open) throw error;
+    }
+  }
+
+  if (!options.open) {
+    throw new LanhuError("LANHU_AUTH_REQUIRED", "当前没有可用的蓝湖浏览器登录态。", "移除 --no-open 后重试，或运行：lanhu auth import");
+  }
+  await dependencies.openBrowser("https://lanhuapp.com/");
+  await dependencies.waitForLogin(options.timeout, target.label);
+  return attempt("browser-login");
 }
 
 export async function importCredential(cookieInput: string) {

@@ -43,6 +43,10 @@ export function parseLastUsedProfile(raw: string): string | undefined {
   }
 }
 
+export function isCookieDecryptionBlocked(warnings: string[]): boolean {
+  return warnings.some((warning) => /keychain|safe storage|keyring|app-bound encryption|could not be decrypted|decrypt failed|permission denied|access denied|interaction.*not allowed/i.test(warning));
+}
+
 async function resolveChromiumProfile(target: BrowserTarget, explicitProfile?: string): Promise<string | undefined> {
   if (explicitProfile) return explicitProfile;
   if (process.platform !== "darwin") return undefined;
@@ -113,12 +117,18 @@ export async function readLanhuBrowserCookie(
     });
     const cookie = toCookieHeader(result.cookies, { dedupeByName: true });
     if (!cookie) {
+      if (isCookieDecryptionBlocked(result.warnings)) {
+        throw new LanhuError(
+          "LANHU_PERMISSION_DENIED",
+          `系统不允许 CLI 解密 ${target.label} Cookie。`,
+          "请使用浏览器 Extension 导出 lanhuapp.com Cookie 后运行：lanhu auth import",
+          false,
+        );
+      }
       throw new LanhuError(
-        "LANHU_AUTH_UNREADABLE",
-        "浏览器中尚未读取到 lanhuapp.com 登录 Cookie。",
-        process.platform === "win32"
-          ? "Windows Chrome/Edge 可能受 App-Bound Encryption 限制；可改用 Firefox，或运行：lanhu auth import"
-          : "请确认已在打开的默认浏览器中登录，或运行：lanhu auth import",
+        "LANHU_AUTH_REQUIRED",
+        `${target.label} 中尚未找到 lanhuapp.com 登录态。`,
+        "请在打开的蓝湖页面完成登录后重试。",
         true,
       );
     }

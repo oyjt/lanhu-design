@@ -134,7 +134,7 @@ export function createProgram(): Command {
     }));
   auth.command("status").description("检查本地凭据状态").action(async (_options, command) => withOutput(command, "auth status", async (output) => output.success(await authStatus())));
   auth.command("import").description("通过隐藏输入手动导入 Cookie").action(async (_options, command) => withOutput(command, "auth import", async (output) => output.success(await importCredential(await readSecret("粘贴 Cookie（输入不会显示）：")))));
-  auth.command("refresh").description("重新读取浏览器会话").option("--browser <browser>").option("--profile <profile>").action(async (options, command) => withOutput(command, "auth refresh", async (output) => output.success(await authenticate({ browser: options.browser, profile: options.profile, timeout: 120_000, open: true }))));
+  auth.command("refresh").description("重新打开浏览器并读取会话").option("--browser <browser>").option("--profile <profile>").action(async (options, command) => withOutput(command, "auth refresh", async (output) => output.success(await authenticate({ browser: options.browser, profile: options.profile, timeout: 120_000, open: true, forceLogin: true }))));
   auth.command("logout").description("删除 CLI 本地凭据").action(async (_options, command) => withOutput(command, "auth logout", async (output) => output.success(await logout())));
 
   program.command("env").description("显示脱敏运行环境").action(async (_options, command) => withOutput(command, "env", async (output) => output.success({ node: process.version, platform: `${process.platform}-${process.arch}`, configDirectory: paths.config, credential: await authStatus() })));

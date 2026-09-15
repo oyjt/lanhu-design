@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapBrowser, parseLastUsedProfile } from "../src/auth/browser-cookie-reader.js";
+import { isCookieDecryptionBlocked, mapBrowser, parseLastUsedProfile } from "../src/auth/browser-cookie-reader.js";
 
 describe("browser target mapping", () => {
   it.each([
@@ -24,5 +24,10 @@ describe("browser target mapping", () => {
   it("reads the most recently used Chromium profile", () => {
     expect(parseLastUsedProfile(JSON.stringify({ profile: { last_used: "Profile 2" } }))).toBe("Profile 2");
     expect(parseLastUsedProfile("invalid json")).toBeUndefined();
+  });
+
+  it("distinguishes blocked decryption from a missing login", () => {
+    expect(isCookieDecryptionBlocked(["Failed to read macOS Keychain (Chrome Safe Storage): permission denied"])).toBe(true);
+    expect(isCookieDecryptionBlocked(["Chrome cookies database not found."])).toBe(false);
   });
 });
