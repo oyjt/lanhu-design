@@ -20,6 +20,10 @@
   "author": "oyjt",
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/oyjt/lanhu-design.git" },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "packageManager": "pnpm@12.4.1",
   "dependencies": {
     "commander": "^14.0.1",
