@@ -10,7 +10,9 @@ lanhu --version
 lanhu auth
 ```
 
-`lanhu auth` 会打开系统默认浏览器中的蓝湖登录页，并在用户登录后读取 `lanhuapp.com` Cookie。CLI 不会启动或控制内置浏览器，也不依赖 Playwright。Windows 新版 Chrome/Edge 若受 App-Bound Encryption 限制，可改用 Firefox，或执行 `lanhu auth import` 隐藏输入 Cookie。
+`lanhu auth` 会打开系统默认浏览器中的蓝湖登录页，并在登录完成后读取蓝湖会话信息。该过程不会创建额外的浏览器实例。
+
+Windows 新版 Chrome/Edge 可能因系统安全机制无法读取登录会话，此时可改用 Firefox，或执行 `lanhu auth import` 手动导入 Cookie。
 
 常用命令：
 
