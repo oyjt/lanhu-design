@@ -4,20 +4,11 @@
 
 ## 1.4.0 - Unreleased
 
-- 升级 Commander 15、TypeScript 7、Vitest 5、Node.js 类型及其余项目依赖到当前最新版；CLI 最低运行版本调整为 Node.js 22.12，并同步升级构建目标和 GitHub Actions。
-- 将 `@steipete/sweet-cookie` 从可选依赖调整为正式依赖，确保核心浏览器认证能力在安装阶段即可用；npm 包描述和关键业务注释同步中文化。
-- 在同一仓库新增 `lanhu-design` TypeScript CLI，提供 `lanhu` 命令，同时保持 `skills/lanhu-design/` 独立安装和旧脚本入口兼容。
-- 新增 `auth/status/refresh/import/logout`、`doctor`、`env`、`config`、`designs`、`image`、`specs`、`slices`、`download`、`export` 命令。
-- `lanhu auth` 使用系统默认浏览器并通过隔离的 Cookie Reader Adapter 读取登录会话，不引入 Playwright；Windows 受限场景提供 `auth import` 正式兜底。
-- macOS 认证会锁定系统默认浏览器及其最近使用的 Profile，只访问一次对应的 Safe Storage 钥匙串项，避免按多个 Profile 重复弹出授权窗口。
-- 登录阶段改为本地检查 Cookie 格式和可识别令牌的过期时间，移除不可靠的蓝湖用户/项目列表探测端点；服务器端有效性由实际业务请求确认。
-- `lanhu auth` 改为先复用现有浏览器登录态，仅在未登录或令牌过期时打开默认浏览器并重试；系统禁止 Cookie 解密时立即转入 Extension/`auth import` 兜底，不再重复尝试。
-- `lanhu auth` 在访问浏览器前优先复用 `LANHU_COOKIE` 或 CLI Credential Store，已有有效凭据时完全绕过 Chromium Cookie 与 Keychain；`auth refresh` 继续用于强制刷新浏览器会话。
-- 认证命令在终端使用友好的登录状态与刷新指令，仅在 `--json` 模式输出结构化结果；macOS Chromium Keychain 访问前增加明确的授权弹窗说明。
-- 重构 README 为面向用户的安装、认证、常用场景与故障排查手册；新增根目录 `AGENTS.md`，集中维护仓库级 AI 编码约束，并与 Skill 运行说明分离。
-- 统一各平台配置目录为用户主目录下的 `.config/lanhu-design`，凭据文件固定为 `credentials.json`，不再依赖平台目录映射。
-- 新增原子凭据存储、Secret Redactor、JSON envelope、稳定错误码与退出码。
-- CLI 业务命令复用现有 Skill runtime；Skill 未安装 CLI 时仍可直接使用 `LANHU_COOKIE` 和原脚本。
+- 新增 `lanhu` CLI，支持认证登录、环境诊断、设计稿查询、规格与切图获取、资源下载和导出。
+- 新增 `lanhu auth` 浏览器授权流程，可复用现有浏览器登录态，并支持刷新认证和手动导入 Cookie。
+- 凭据统一保存在 `~/.config/lanhu-design/credentials.json`。
+- 保持 `skills/lanhu-design/` 和原有脚本入口兼容，现有 Agent Skill 用户无需迁移。
+- CLI 最低运行环境调整为 Node.js 22.12。
 
 ## 1.3.1 - 2026-09-11
 
