@@ -129,6 +129,8 @@ lanhu specs --help
 lanhu download --help
 ```
 
+所有命令的 `--timeout` 均以秒为单位；业务请求默认 30 秒，浏览器登录默认等待 120 秒。
+
 ## 使用场景
 
 ### 查看项目设计图

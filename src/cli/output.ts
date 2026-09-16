@@ -8,7 +8,7 @@ export class Output {
   constructor(private readonly command: string, private readonly version: string, private readonly options: OutputOptions) {}
 
   status(message: string): void {
-    if (!this.options.json && !this.options.quiet) console.error(redactSecrets(message));
+    if (!this.options.json && !this.options.quiet) process.stderr.write(`${redactSecrets(message)}\n`);
   }
 
   success(data: unknown, warnings: string[] = [], humanMessage?: string): void {

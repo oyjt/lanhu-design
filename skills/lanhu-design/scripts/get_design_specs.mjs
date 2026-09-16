@@ -100,8 +100,8 @@ try {
     const htmlPath = path.join(outputDir, `${safeName}.html`);
     await writeFile(jsonPath, JSON.stringify(result, null, 2), "utf8");
     await writeFile(htmlPath, doMinify ? minifyHtml(html) : html, "utf8");
-    console.error(`已保存规格 JSON: ${jsonPath}`);
-    console.error(`已保存 HTML: ${htmlPath}`);
+    process.stderr.write(`已保存规格 JSON: ${jsonPath}\n`);
+    process.stderr.write(`已保存 HTML: ${htmlPath}\n`);
 
     // P3：把 HTML 引用的远程图片下载到本地，使保存的 HTML 可直接渲染。
     if (downloadImages) {
@@ -121,7 +121,7 @@ try {
       }
       result.images_downloaded = ok;
       result.images_failed = failed;
-      console.error(`已下载图片: ${ok}/${entries.length}` + (failed.length ? `，失败 ${failed.length}` : ""));
+      process.stderr.write(`已下载图片: ${ok}/${entries.length}${failed.length ? `，失败 ${failed.length}` : ""}\n`);
       for (const f of failed) console.error(`  下载失败 ${f}`);
       // 回写带下载结果的 JSON。
       await writeFile(jsonPath, JSON.stringify(result, null, 2), "utf8");

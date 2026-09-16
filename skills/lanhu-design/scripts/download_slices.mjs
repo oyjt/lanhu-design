@@ -271,7 +271,7 @@ async function main() {
     const item = planned[index];
     try {
       await download(item.url, item.outputPath, args.referer, args.retries);
-      console.error(`[${index + 1}/${planned.length}] OK ${item.outputPath}`);
+      process.stderr.write(`[${index + 1}/${planned.length}] OK ${item.outputPath}\n`);
     } catch (error) {
       failures.push(`${item.label} -> ${item.outputPath}: ${error.message}`);
       console.error(`[${index + 1}/${planned.length}] FAIL ${item.outputPath}`);
