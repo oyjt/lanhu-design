@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- 新增 `lanhu install` 安装向导，可一次安装 CLI 和全局 Agent Skill，并按需引导蓝湖登录。
 - 优化浏览器认证提示：打开浏览器前显示 3 秒倒计时；Windows 读取失败时明确引导指定 Profile、改用 Firefox 或手动导入 Cookie。
 
 ## 1.4.0 - 2026-09-15

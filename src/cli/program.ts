@@ -1,12 +1,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createInterface } from "node:readline/promises";
 import { Command, Option } from "commander";
 import { authenticate, authStatus, importCredential, logout } from "../auth/auth-manager.js";
 import { readSecret } from "../auth/read-secret.js";
 import { resolveCredential } from "../auth/credential-resolver.js";
 import { runLegacy, type LegacyScript } from "../core/legacy-runner.js";
 import { exportDesign } from "../commands/export.js";
-import { LanhuError } from "../errors/lanhu-error.js";
+import { installCliAndSkill } from "../commands/install.js";
+import { LanhuError, toLanhuError } from "../errors/lanhu-error.js";
 import { globalOptions } from "./context.js";
 import { Output } from "./output.js";
 
@@ -32,9 +34,23 @@ function timeout(command: Command): number {
   return value;
 }
 
-function browserOpenDelay(command: Command): number {
+function isInteractive(command: Command): boolean {
   const options = globalOptions(command);
-  return process.stdin.isTTY && process.stderr.isTTY && !options.json && !options.quiet ? 3 : 0;
+  return Boolean(process.stdin.isTTY && process.stdout.isTTY && process.stderr.isTTY && !options.json && !options.quiet);
+}
+
+function browserOpenDelay(command: Command): number {
+  return isInteractive(command) ? 3 : 0;
+}
+
+async function confirmAuthentication(): Promise<boolean> {
+  const readline = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = (await readline.question("CLI 和 Agent Skill 已安装，是否现在登录蓝湖？[Y/n] ")).trim().toLowerCase();
+    return answer === "" || answer === "y" || answer === "yes";
+  } finally {
+    readline.close();
+  }
 }
 
 async function withOutput(command: Command, name: string, action: (output: Output) => Promise<void>): Promise<void> {
@@ -135,6 +151,30 @@ export function createProgram(): Command {
     .option("--timeout <milliseconds>", "请求或认证超时", "30000")
     .addOption(new Option("--cookie <cookie>", "显式 Cookie（有 shell history 泄露风险）").hideHelp())
     .showHelpAfterError();
+
+  program.command("install")
+    .description("安装 CLI 和 Agent Skill")
+    .option("--no-auth", "安装后不询问蓝湖登录")
+    .action(async (options, command) => withOutput(command, "install", async (output) => {
+      const interactive = isInteractive(command);
+      const result = await installCliAndSkill({ silent: !interactive, onStatus: (message) => output.status(message) });
+      let authenticated = false;
+      const warnings: string[] = [];
+      if (options.auth && interactive && await confirmAuthentication()) {
+        try {
+          await authenticate({ timeout: 120_000, open: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
+          authenticated = true;
+        } catch (error) {
+          const normalized = toLanhuError(error);
+          warnings.push(`蓝湖登录未完成：${normalized.message}${normalized.hint ? `；${normalized.hint}` : ""}`);
+        }
+      }
+      output.success(
+        { ...result, authenticated },
+        warnings,
+        authenticated ? "CLI、Agent Skill 和蓝湖登录已配置完成。" : "CLI 和 Agent Skill 安装完成。\n下一步：lanhu auth",
+      );
+    }));
 
   const auth = program.command("auth").description("从系统默认浏览器授权蓝湖登录");
   auth

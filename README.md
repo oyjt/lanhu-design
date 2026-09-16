@@ -101,6 +101,7 @@ lanhu auth import
 
 | 命令 | 用途 |
 | --- | --- |
+| `lanhu install` | 安装或升级 CLI 和全局 Agent Skill |
 | `lanhu designs "$LANHU_URL"` | 列出项目设计图 |
 | `lanhu image "$LANHU_URL" --design 首页 --output .lanhu/images` | 下载指定设计图的预览图 |
 | `lanhu specs "$LANHU_URL" --design 首页 --output .lanhu/specs --download-images` | 导出设计规格及引用图片 |
@@ -204,17 +205,24 @@ lanhu doctor --json
 
 ## Agent Skill
 
-如果希望 Claude Code、Codex CLI、Cursor 等 AI 编码助手自动调用蓝湖工具，可以安装仓库内的 Agent Skill：
+如果希望 Claude Code、Codex CLI、Cursor 等 AI 编码助手自动调用蓝湖工具，推荐使用安装向导，一次安装 CLI 和 Agent Skill：
 
 ```bash
-npx skills add oyjt/lanhu-design
+npx lanhu-design@latest install
 ```
 
-推荐同时安装 CLI，并先由用户完成登录：
+安装完成后，向导会询问是否立即登录蓝湖。也可以跳过询问，稍后手动登录：
+
+```bash
+npx lanhu-design@latest install --no-auth
+lanhu auth
+```
+
+如需分别安装，可执行：
 
 ```bash
 npm install -g lanhu-design
-lanhu auth
+npx skills add oyjt/lanhu-design -y -g
 ```
 
 安装后可以直接向 AI 描述任务，例如：
