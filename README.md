@@ -33,7 +33,7 @@ npx lanhu-design@latest install
 
 1. 安装或升级全局 `lanhu` CLI。
 2. 安装全局 Agent Skill，使 Claude Code、Codex CLI、Cursor 等工具可以发现并使用蓝湖能力。
-3. 询问是否立即登录蓝湖。
+3. 询问是否检查蓝湖登录凭据；已有有效凭据会直接复用，只有缺少或过期时才尝试读取浏览器，必要时打开登录页。
 
 安装完成后可以检查 CLI：
 
@@ -43,7 +43,7 @@ lanhu --version
 
 ### 2. 登录蓝湖
 
-如果已经在安装向导中完成登录，可以跳过这一步；否则执行：
+如果安装向导已经确认凭据可用，可以跳过这一步；否则执行：
 
 ```bash
 lanhu auth
@@ -227,7 +227,7 @@ Agent Skill 为 AI 编码助手提供蓝湖任务的识别规则、操作流程�
 npx lanhu-design@latest install
 ```
 
-如需跳过登录询问，可以执行：
+如需跳过登录凭据检查，可以执行：
 
 ```bash
 npx lanhu-design@latest install --no-auth
@@ -274,7 +274,7 @@ $env:LANHU_COOKIE='完整 Cookie'
 
 凭据使用顺序为：显式 `--cookie`（仅用于调试）、`LANHU_COOKIE`、CLI 保存的凭据。
 
-> 不建议把 Cookie 写入项目 `.env`、仓库配置或 shell 历史。业务命令不会自动扫描浏览器，只有 `auth`、`auth refresh` 和明确启用浏览器检查的诊断命令会读取浏览器登录状态。
+> 不建议把 Cookie 写入项目 `.env`、仓库配置或 shell 历史。业务命令不会自动扫描浏览器，只有 `auth` 和 `auth refresh` 会读取浏览器登录状态。
 
 ## 故障排查
 

@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { installAuthenticationMessage } from "../src/cli/program.js";
 import { Output } from "../src/cli/output.js";
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("CLI output", () => {
+  it("describes whether install reused or refreshed credentials", () => {
+    expect(installAuthenticationMessage("saved-credential")).toContain("已复用现有蓝湖登录凭据");
+    expect(installAuthenticationMessage("existing-cookie")).toContain("已读取并保存浏览器登录凭据");
+    expect(installAuthenticationMessage("browser-login")).toContain("蓝湖登录凭据已保存");
+    expect(installAuthenticationMessage()).toContain("下一步：lanhu auth");
+  });
+
   it("prints a friendly message instead of an object in human mode", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     new Output("auth", "1.4.1", {}).success({ authenticated: true }, [], "已登录。\n如需刷新 Cookie，请运行：lanhu auth refresh");

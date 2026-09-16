@@ -22,6 +22,14 @@ function authenticationMessage(result: { flow?: string; source?: string | null; 
   return `已登录${location ? `（${location}）` : ""}。\n如需刷新 Cookie，请运行：lanhu auth refresh`;
 }
 
+export function installAuthenticationMessage(flow?: string): string {
+  const installed = "CLI 和 Agent Skill 安装完成。";
+  if (flow === "saved-credential") return `${installed}\n已复用现有蓝湖登录凭据。\n如需切换账号或更新 Cookie，请运行：lanhu auth refresh`;
+  if (flow === "existing-cookie") return `${installed}\n已读取并保存浏览器登录凭据。`;
+  if (flow === "browser-login") return `${installed}\n蓝湖登录凭据已保存。`;
+  return `${installed}\n下一步：lanhu auth`;
+}
+
 export function timeoutMs(command: Command): number {
   const seconds = Number(globalOptions(command).timeout || "30");
   if (!Number.isFinite(seconds) || seconds <= 0) throw new LanhuError("LANHU_INVALID_ARGUMENT", "--timeout 必须是正数秒值。");
@@ -40,7 +48,9 @@ function browserOpenDelay(command: Command): number {
 async function confirmAuthentication(): Promise<boolean> {
   const readline = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const answer = (await readline.question("CLI 和 Agent Skill 已安装，是否现在登录蓝湖？[Y/n] ")).trim().toLowerCase();
+    const answer = (await readline.question(
+      "CLI 和 Agent Skill 已安装。是否现在检查蓝湖登录凭据？\n已有有效凭据会直接复用；未找到时才会尝试读取浏览器，必要时打开蓝湖登录页。[Y/n] ",
+    )).trim().toLowerCase();
     return answer === "" || answer === "y" || answer === "yes";
   } finally {
     readline.close();
@@ -146,25 +156,24 @@ export function createProgram(): Command {
 
   program.command("install")
     .description("安装 CLI 和 Agent Skill")
-    .option("--no-auth", "安装后不询问蓝湖登录")
+    .option("--no-auth", "跳过蓝湖登录凭据检查")
     .action(async (options, command) => withOutput(command, "install", async (output) => {
       const interactive = isInteractive(command);
       const result = await installCliAndSkill({ silent: !interactive, onStatus: (message) => output.status(message) });
-      let authenticated = false;
+      let authentication: Awaited<ReturnType<typeof authenticate>> | undefined;
       const warnings: string[] = [];
       if (options.auth && interactive && await confirmAuthentication()) {
         try {
-          await authenticate({ timeout: 120_000, open: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
-          authenticated = true;
+          authentication = await authenticate({ timeout: 120_000, open: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
         } catch (error) {
           const normalized = toLanhuError(error);
           warnings.push(`蓝湖登录未完成：${normalized.message}${normalized.hint ? `；${normalized.hint}` : ""}`);
         }
       }
       output.success(
-        { ...result, authenticated },
+        { ...result, authenticated: Boolean(authentication) },
         warnings,
-        authenticated ? "CLI、Agent Skill 和蓝湖登录已配置完成。" : "CLI 和 Agent Skill 安装完成。\n下一步：lanhu auth",
+        installAuthenticationMessage(authentication?.flow),
       );
     }));
 
