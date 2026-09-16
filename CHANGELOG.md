@@ -2,6 +2,10 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## Unreleased
+
+- 优化 Agent Skill 安装：一键安装保持全局、非交互行为并隐藏 PromptScript 兼容性提示；单独安装 Skill 时由用户选择目标与范围。
+
 ## 1.4.1 - 2026-09-16
 
 - 新增 `lanhu install` 安装向导，可一次安装 CLI 和全局 Agent Skill，并按需引导蓝湖登录。

@@ -27,7 +27,8 @@ export async function installCliAndSkill(
 
   options.onStatus?.("正在安装 lanhu-design Agent Skill...");
   try {
-    await run("npx", ["-y", "skills", "add", "oyjt/lanhu-design", "-y", "-g"], silent);
+    // skills 会为不支持全局安装的 PromptScript 输出兼容性提示，这里只保留向导自身的明确状态。
+    await run("npx", ["-y", "skills", "add", "oyjt/lanhu-design", "-y", "-g"], true);
   } catch (error) {
     throw new LanhuError("LANHU_INTERNAL_ERROR", "lanhu-design Agent Skill 安装失败。", "请手动运行：npx skills add oyjt/lanhu-design -y -g", true, { cause: error });
   }

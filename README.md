@@ -236,7 +236,7 @@ lanhu auth
 如果只需要 Agent Skill，可以单独安装：
 
 ```bash
-npx skills add oyjt/lanhu-design -y -g
+npx skills add oyjt/lanhu-design
 ```
 
 安装后可以直接向 AI 描述任务，例如：
