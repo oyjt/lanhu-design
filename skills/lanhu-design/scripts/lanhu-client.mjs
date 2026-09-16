@@ -31,27 +31,19 @@ function getCookie() {
 }
 
 async function request(url, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: { ...HEADERS, Cookie: getCookie(), ...options.headers },
-      redirect: "follow",
-    });
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(
-        `认证失败 (HTTP ${response.status})。LANHU_COOKIE 可能已过期，请重新获取。`,
-      );
-    }
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    }
-    return response;
-  } finally {
-    clearTimeout(timeout);
+  const response = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(HTTP_TIMEOUT),
+    headers: { ...HEADERS, Cookie: getCookie(), ...options.headers },
+    redirect: "follow",
+  });
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(
+      `认证失败 (HTTP ${response.status})。LANHU_COOKIE 可能已过期，请重新获取。`,
+    );
   }
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  return response;
 }
 
 async function requestJson(url, options) {
@@ -60,28 +52,22 @@ async function requestJson(url, options) {
 }
 
 async function requestDdsJson(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": HEADERS["User-Agent"],
-        "Authorization": "Basic dW5kZWZpbmVkOg==",
-        "Referer": `${DDS_BASE_URL}/`,
-        "Accept": "application/json, text/plain, */*",
-        "Cookie": getCookie(),
-      },
-      redirect: "follow",
-    });
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(`DDS 认证失败 (HTTP ${response.status})。LANHU_COOKIE 可能已过期。`);
-    }
-    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    return response.json();
-  } finally {
-    clearTimeout(timeout);
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(HTTP_TIMEOUT),
+    headers: {
+      "User-Agent": HEADERS["User-Agent"],
+      "Authorization": "Basic dW5kZWZpbmVkOg==",
+      "Referer": `${DDS_BASE_URL}/`,
+      "Accept": "application/json, text/plain, */*",
+      "Cookie": getCookie(),
+    },
+    redirect: "follow",
+  });
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`DDS 认证失败 (HTTP ${response.status})。LANHU_COOKIE 可能已过期。`);
   }
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  return response.json();
 }
 
 export async function getVersionId(url, designId) {
@@ -110,15 +96,9 @@ export async function getDdsSchema(versionId) {
   }
   const resourceUrl = (data.data || {}).data_resource_url;
   if (!resourceUrl) throw new Error("store_schema_revise 未返回 data_resource_url");
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
-  try {
-    const resp = await fetch(resourceUrl, { signal: controller.signal });
-    if (!resp.ok) throw new Error(`Schema CDN HTTP ${resp.status}`);
-    return resp.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+  const resp = await fetch(resourceUrl, { signal: AbortSignal.timeout(HTTP_TIMEOUT) });
+  if (!resp.ok) throw new Error(`Schema CDN HTTP ${resp.status}`);
+  return resp.json();
 }
 
 export async function getDesignSchema(url, designName) {
@@ -636,20 +616,11 @@ export async function downloadFile(url, localPath, referer) {
   await mkdir(path.dirname(localPath), { recursive: true });
   const headers = {};
   if (referer) headers.Referer = referer;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
-  try {
-    const response = await fetch(url, {
-      headers: { ...HEADERS, Cookie: getCookie(), ...headers },
-      signal: controller.signal,
-      redirect: "follow",
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    }
-    const buffer = Buffer.from(await response.arrayBuffer());
-    await writeFile(localPath, buffer);
-  } finally {
-    clearTimeout(timeout);
-  }
+  const response = await fetch(url, {
+    headers: { ...HEADERS, Cookie: getCookie(), ...headers },
+    signal: AbortSignal.timeout(HTTP_TIMEOUT),
+    redirect: "follow",
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  await writeFile(localPath, Buffer.from(await response.arrayBuffer()));
 }

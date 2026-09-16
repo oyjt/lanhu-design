@@ -58,21 +58,11 @@ try {
     await getDesignSchema(url, designArg);
   const designScale = detectDesignScale(sketchData, canvasSize);
 
-  let html, imageUrlMapping;
-
-  if (source === "dds" && schema) {
-    const rawHtml = convertLanhuToHtml(schema);
-    const minified = doMinify ? minifyHtml(rawHtml) : rawHtml;
-    const localized = localizeImageUrls(minified, design.name);
-    html = localized.html;
-    imageUrlMapping = localized.mapping;
-  } else {
-    const rawHtml = convertSketchToHtml(sketchData, designScale, designImageUrl);
-    const minified = doMinify ? minifyHtml(rawHtml) : rawHtml;
-    const localized = localizeImageUrls(minified, design.name);
-    html = localized.html;
-    imageUrlMapping = localized.mapping;
-  }
+  const rawHtml = source === "dds" && schema
+    ? convertLanhuToHtml(schema)
+    : convertSketchToHtml(sketchData, designScale, designImageUrl);
+  const localized = localizeImageUrls(doMinify ? minifyHtml(rawHtml) : rawHtml, design.name);
+  const { html, mapping: imageUrlMapping } = localized;
 
   const designTokens = extractDesignTokens(sketchData);
   const sketchAnnotations = source === "sketch"

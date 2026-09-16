@@ -17,20 +17,11 @@ async function repositoryRoot(): Promise<string> {
   throw new LanhuError("LANHU_INTERNAL_ERROR", "npm 包中缺少 Skill runtime。请重新安装 lanhu-design。");
 }
 
-function parseLastJson(stdout: string): unknown {
-  const trimmed = stdout.trim();
-  try { return JSON.parse(trimmed); } catch { /* 输出可能同时包含进度文本和 JSON。 */ }
-  for (let index = trimmed.lastIndexOf("\n{"); index >= 0; index = trimmed.lastIndexOf("\n{", index - 1)) {
-    try { return JSON.parse(trimmed.slice(index + 1)); } catch { /* 当前片段无效时继续向前查找。 */ }
-  }
-  return trimmed;
-}
-
 export async function runLegacy(
   script: LegacyScript,
   args: string[],
   options: { cookie?: string; timeoutMs?: number } = {},
-): Promise<{ data: unknown }> {
+): Promise<unknown> {
   const root = await repositoryRoot();
   const file = path.join(root, "skills/lanhu-design/scripts", `${script}.mjs`);
   return new Promise((resolve, reject) => {
@@ -49,7 +40,11 @@ export async function runLegacy(
     child.stderr.on("data", (chunk) => { stderr += String(chunk); });
     child.once("error", reject);
     child.once("close", (code) => {
-      if (code === 0) { resolve({ data: parseLastJson(stdout) }); return; }
+      if (code === 0) {
+        try { resolve(JSON.parse(stdout.trim())); }
+        catch (error) { reject(new LanhuError("LANHU_INTERNAL_ERROR", "Skill runtime 未返回有效 JSON。", undefined, false, { cause: error })); }
+        return;
+      }
       const message = redactSecrets(stderr.trim() || stdout.trim() || `旧脚本退出码：${code}`);
       const errorCode = code === 2 ? "LANHU_INVALID_ARGUMENT" : /认证|cookie/i.test(message) ? "LANHU_AUTH_EXPIRED" : "LANHU_API_ERROR";
       reject(new LanhuError(errorCode, message, errorCode.startsWith("LANHU_AUTH") ? "运行：lanhu auth refresh 或 lanhu auth import" : undefined));

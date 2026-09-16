@@ -123,7 +123,7 @@ try {
     try {
       await downloadFile(imageUrl, outputPath);
       downloaded.push({ name: design.name, path: outputPath });
-      console.log(`OK ${outputPath}`);
+      console.error(`OK ${outputPath}`);
     } catch (error) {
       failed.push({ name: design.name, reason: error.message });
       console.error(`FAIL ${design.name}: ${error.message}`);

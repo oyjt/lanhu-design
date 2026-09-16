@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import { Command, Option } from "commander";
+import packageJson from "../../package.json" with { type: "json" };
 import { authenticate, authStatus, importCredential, logout } from "../auth/auth-manager.js";
 import { readSecret } from "../auth/read-secret.js";
 import { resolveCredential } from "../auth/credential-resolver.js";
@@ -12,19 +13,13 @@ import { LanhuError, toLanhuError } from "../errors/lanhu-error.js";
 import { globalOptions } from "./context.js";
 import { Output } from "./output.js";
 
-export const VERSION = "1.4.0";
+export const VERSION = packageJson.version;
 
 function authenticationMessage(result: { flow?: string; source?: string | null; profile?: string }): string {
   const sourceLabels: Record<string, string> = { environment: "环境变量", "manual-import": "手动导入" };
   const source = result.source ? (sourceLabels[result.source] ?? result.source) : undefined;
   const location = [source, result.profile].filter(Boolean).join(" / ");
-  if (result.flow === "saved-credential") {
-    return `已登录${location ? `（${location}）` : ""}，正在使用已保存的蓝湖凭据。\n如需刷新 Cookie，请运行：lanhu auth refresh`;
-  }
-  if (result.flow === "existing-cookie") {
-    return `已登录${location ? `（${location}）` : ""}，浏览器 Cookie 已保存。\n如需重新读取 Cookie，请运行：lanhu auth refresh`;
-  }
-  return `蓝湖登录成功${location ? `（${location}）` : ""}，Cookie 已保存。\n如需重新读取 Cookie，请运行：lanhu auth refresh`;
+  return `已登录${location ? `（${location}）` : ""}。\n如需刷新 Cookie，请运行：lanhu auth refresh`;
 }
 
 function timeout(command: Command): number {
@@ -66,15 +61,13 @@ async function invokeLegacy(command: Command, name: string, script: LegacyScript
   await withOutput(command, name, async (output) => {
     const cookie = await resolveCredential(globalOptions(command).cookie);
     const result = await runLegacy(script, args, { cookie, timeoutMs: timeout(command) });
-    output.success(result.data);
+    output.success(result);
   });
 }
 
 function addBusinessCommands(program: Command): void {
   program.command("designs <url>")
     .description("列出蓝湖项目设计图")
-    .option("--page <number>", "页码", "1")
-    .option("--limit <number>", "每页数量", "500")
     .action(async (url, _options, command) => invokeLegacy(command, "designs", "get_designs", [url]));
 
   program.command("image <url>")
@@ -109,9 +102,9 @@ function addBusinessCommands(program: Command): void {
       const result = await runLegacy("get_design_slices", args, { cookie, timeoutMs: timeout(command) });
       if (options.output) {
         await mkdir(path.dirname(path.resolve(options.output)), { recursive: true });
-        await writeFile(options.output, `${JSON.stringify(result.data, null, 2)}\n`, "utf8");
+        await writeFile(options.output, `${JSON.stringify(result, null, 2)}\n`, "utf8");
       }
-      output.success(options.output ? { result: result.data, output: path.resolve(options.output) } : result.data);
+      output.success(options.output ? { result, output: path.resolve(options.output) } : result);
     }));
 
   program.command("download <json-file>")
@@ -196,19 +189,7 @@ export function createProgram(): Command {
   }));
   auth.command("logout").description("删除 CLI 本地凭据").action(async (_options, command) => withOutput(command, "auth logout", async (output) => output.success(await logout())));
 
-  program.command("doctor").description("运行脱敏环境诊断").option("--auth-browser", "明确尝试读取浏览器会话").action(async (options, command) => withOutput(command, "doctor", async (output) => {
-    const credential = await authStatus();
-    const checks: Array<{ name: string; ok: boolean; value: unknown }> = [
-      { name: "node", ok: Number(process.versions.node.split(".")[0]) >= 20, value: process.version },
-      { name: "platform", ok: true, value: `${process.platform}-${process.arch}` },
-      { name: "credential", ok: credential.authenticated, value: credential },
-    ];
-    if (options.authBrowser) {
-      try { checks.push({ name: "browser-cookie", ok: true, value: await authenticate({ timeout: 1500, open: false }) }); }
-      catch (error) { checks.push({ name: "browser-cookie", ok: false, value: error instanceof Error ? error.message : String(error) }); }
-    }
-    output.success({ healthy: checks.every((check) => check.ok || check.name === "credential"), checks });
-  }));
+  program.command("doctor").description("查看本地凭据状态（兼容命令，推荐 auth status）").action(async (_options, command) => withOutput(command, "doctor", async (output) => output.success(await authStatus())));
 
   addBusinessCommands(program);
   return program;

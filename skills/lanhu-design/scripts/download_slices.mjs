@@ -201,19 +201,11 @@ async function fetchBuffer(url, referer) {
     return readFile(fileURLToPath(url));
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    const headers = { "User-Agent": "Mozilla/5.0" };
-    if (referer) headers.Referer = referer;
-    const response = await fetch(url, { headers, signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    }
-    return Buffer.from(await response.arrayBuffer());
-  } finally {
-    clearTimeout(timeout);
-  }
+  const headers = { "User-Agent": "Mozilla/5.0" };
+  if (referer) headers.Referer = referer;
+  const response = await fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  return Buffer.from(await response.arrayBuffer());
 }
 
 async function download(url, outputPath, referer, retries) {
@@ -279,7 +271,7 @@ async function main() {
     const item = planned[index];
     try {
       await download(item.url, item.outputPath, args.referer, args.retries);
-      console.log(`[${index + 1}/${planned.length}] OK ${item.outputPath}`);
+      console.error(`[${index + 1}/${planned.length}] OK ${item.outputPath}`);
     } catch (error) {
       failures.push(`${item.label} -> ${item.outputPath}: ${error.message}`);
       console.error(`[${index + 1}/${planned.length}] FAIL ${item.outputPath}`);

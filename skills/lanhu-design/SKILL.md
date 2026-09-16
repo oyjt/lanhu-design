@@ -5,7 +5,7 @@ license: MIT; see LICENSE.txt
 compatibility: Requires Node.js 18+, network access to lanhuapp.com, and a valid LANHU_COOKIE environment variable.
 metadata:
   author: oyjt
-  version: 1.4.0
+  version: 1.4.1
 ---
 
 # Lanhu Design
@@ -22,7 +22,7 @@ metadata:
 command -v lanhu
 ```
 
-- 命令存在：先运行 `lanhu doctor --json`，后续优先使用 `lanhu designs`、`lanhu image`、`lanhu specs`、`lanhu slices`、`lanhu download` 或 `lanhu export`，并为 Agent 调用加 `--json`。
+- 命令存在：先运行 `lanhu auth status --json`，后续优先使用 `lanhu designs`、`lanhu image`、`lanhu specs`、`lanhu slices`、`lanhu download` 或 `lanhu export`，并为 Agent 调用加 `--json`。
 - 命令不存在：检查 `LANHU_COOKIE`，继续使用下方 `scripts/*.mjs` 兼容入口。
 - 不要在 Agent 工作流中自行全局安装 CLI；是否安装由用户或宿主环境决定。
 - 业务命令不得自动扫描浏览器。需要授权时提示用户显式运行 `lanhu auth`；受限浏览器场景使用 `lanhu auth import`。

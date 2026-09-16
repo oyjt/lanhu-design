@@ -121,7 +121,6 @@ lanhu auth import
 | `lanhu slices "$LANHU_URL" --design 首页 --output .lanhu/slices.json` | 获取切图元数据 |
 | `lanhu download .lanhu/slices.json --output src/assets --scale 2x` | 批量下载切图 |
 | `lanhu export "$LANHU_URL" --design 首页 --output .lanhu` | 导出完整设计上下文 |
-| `lanhu doctor` | 检查运行环境和凭据配置 |
 
 运行 `lanhu <command> --help` 可以查看命令的完整参数，例如：
 
@@ -211,7 +210,7 @@ lanhu export "$LANHU_URL" \
 
 ```bash
 lanhu designs "$LANHU_URL" --json
-lanhu doctor --json
+lanhu auth status --json
 ```
 
 普通终端模式优先显示便于阅读的操作结果；`--json` 适合脚本、CI 和 Agent 调用。需要减少非必要输出时可使用 `--quiet`。
@@ -315,13 +314,11 @@ lanhu auth refresh
 
 如果仍然失败，先在浏览器退出并重新登录蓝湖，再运行刷新命令。
 
-### 环境诊断
+### 查看登录状态
 
 ```bash
-lanhu doctor
+lanhu auth status
 ```
-
-提交 Issue 时可以附上 `lanhu doctor --json` 的脱敏结果，但不要附带 Cookie。
 
 ## 兼容脚本
 

@@ -34,7 +34,7 @@ async function inventory(root: string): Promise<Array<{ path: string; type: stri
       result.push({
         path: path.relative(root, absolute).split(path.sep).join("/"),
         type: path.extname(entry.name).slice(1) || "file",
-        size: (await stat(absolute)).size,
+        size: bytes.length,
         sha256: createHash("sha256").update(bytes).digest("hex"),
       });
     }
@@ -54,7 +54,7 @@ export async function exportDesign(options: {
 }) {
   const outputRoot = path.resolve(options.output);
   const list = await runLegacy("get_designs", [options.url], { cookie: options.cookie, timeoutMs: options.timeoutMs });
-  const design = selectDesign(list.data, options.design);
+  const design = selectDesign(list, options.design);
   const name = safeName(design.name);
   const target = path.join(outputRoot, name);
   try {
@@ -75,13 +75,13 @@ export async function exportDesign(options: {
     await runLegacy("get_design_specs", [options.url, "--design", String(design.index), "--output", staging, "--download-images"], { cookie: options.cookie, timeoutMs: options.timeoutMs });
     const slices = await runLegacy("get_design_slices", [options.url, "--design", String(design.index)], { cookie: options.cookie, timeoutMs: options.timeoutMs });
     const slicesPath = path.join(staging, "slices.json");
-    await writeFile(slicesPath, `${JSON.stringify(slices.data, null, 2)}\n`, "utf8");
+    await writeFile(slicesPath, `${JSON.stringify(slices, null, 2)}\n`, "utf8");
     try {
       await runLegacy("download_slices", [slicesPath, "--output", path.join(staging, "assets"), "--scale", options.scale], { cookie: options.cookie, timeoutMs: options.timeoutMs });
     } catch (error) {
       warnings.push(error instanceof Error ? error.message : String(error));
     }
-    const preview = (image.data as { files?: Array<{ path?: string }> })?.files?.[0]?.path;
+    const preview = (image as { files?: Array<{ path?: string }> })?.files?.[0]?.path;
     if (preview) await rename(preview, path.join(staging, `preview${path.extname(preview) || ".png"}`));
     const files = await inventory(staging);
     const manifest = {

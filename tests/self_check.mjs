@@ -17,11 +17,13 @@ import {
 } from "../skills/lanhu-design/scripts/design-converter.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(here, "..");
 const skillRoot = path.resolve(here, "../skills/lanhu-design");
 const skillScripts = path.resolve(here, "../skills/lanhu-design/scripts");
 
 async function checkSkillPackage() {
   const skill = await readFile(path.join(skillRoot, "SKILL.md"), "utf8");
+  const packageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8"));
   const frontmatter = skill.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   assert.ok(frontmatter, "SKILL.md must start with YAML frontmatter");
 
@@ -35,6 +37,7 @@ async function checkSkillPackage() {
   assert.ok(field("compatibility").length <= 500);
   assert.match(field("license"), /LICENSE\.txt/);
   assert.match(frontmatter[1], /^metadata:\r?\n(?:  .+\r?\n?)+/m);
+  assert.match(frontmatter[1], new RegExp(`^  version:\\s*${packageJson.version.replaceAll(".", "\\.")}$`, "m"));
 
   await access(path.join(skillRoot, "LICENSE.txt"));
   const openai = await readFile(path.join(skillRoot, "agents/openai.yaml"), "utf8");

@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import { normalizeCookie } from "./cookie.js";
-import { deleteCredential, readCredential, writeCredential } from "./credential-store.js";
+import { findCredential } from "./credential-resolver.js";
+import { deleteCredential, writeCredential } from "./credential-store.js";
 import { openDefaultBrowser } from "./default-browser.js";
 import { readLanhuBrowserCookie, resolveBrowserTarget } from "./browser-cookie-reader.js";
 import { verifyCredential } from "./credential-verifier.js";
@@ -150,21 +151,15 @@ export async function importCredential(cookieInput: string) {
 }
 
 export async function authStatus() {
-  const env = process.env.LANHU_COOKIE?.trim();
-  if (env && env !== "your_lanhu_cookie_here") {
-    const verification = await verifyCredential(env);
-    return { authenticated: true, validation: verification, source: "environment" };
-  }
-  const stored = await readCredential();
-  if (!stored) return { authenticated: false, source: null };
-  const verification = await verifyCredential(stored.credential.value);
+  const credential = await findCredential();
+  if (!credential) return { authenticated: false, source: null };
+  const verification = await verifyCredential(credential.value);
   return {
     authenticated: true,
     validation: verification,
-    source: stored.credential.source,
-    profile: stored.credential.profile,
-    createdAt: stored.credential.createdAt,
-    validatedAt: stored.credential.validatedAt,
+    source: credential.source,
+    profile: credential.profile,
+    createdAt: credential.createdAt,
   };
 }
 

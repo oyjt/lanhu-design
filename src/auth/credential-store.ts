@@ -10,7 +10,6 @@ export interface StoredCredential {
     source: string;
     profile?: string;
     createdAt: string;
-    validatedAt?: string;
   };
 }
 
@@ -21,7 +20,6 @@ export function parseCredential(raw: string): StoredCredential {
     value.version !== 1 || credential?.type !== "cookie" || !credential.value
     || typeof credential.source !== "string" || typeof credential.createdAt !== "string"
     || (credential.profile !== undefined && typeof credential.profile !== "string")
-    || (credential.validatedAt !== undefined && typeof credential.validatedAt !== "string")
   ) throw new TypeError("凭据文件格式无效。");
   return value as StoredCredential;
 }
@@ -42,7 +40,7 @@ export async function writeCredential(cookie: string, source: string, profile?: 
   const now = new Date().toISOString();
   const value: StoredCredential = {
     version: 1,
-    credential: { type: "cookie", value: cookie, source, profile, createdAt: now, validatedAt: now },
+    credential: { type: "cookie", value: cookie, source, profile, createdAt: now },
   };
   // 先写临时文件再原子替换，避免进程中断后留下半写入的凭据文件。
   const temporary = `${credentialPath}.${process.pid}.tmp`;
