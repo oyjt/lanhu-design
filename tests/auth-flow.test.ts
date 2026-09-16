@@ -71,14 +71,15 @@ describe("browser authentication flow", () => {
       .mockRejectedValueOnce(new LanhuError("LANHU_AUTH_REQUIRED", "not logged in"))
       .mockResolvedValueOnce(browserCookie);
     const deps = dependencies(readCookie);
-    const statuses: string[] = [];
-    const result = await authenticate({ timeout: 120_000, open: true, openDelaySeconds: 3, onStatus: (message) => statuses.push(message) }, deps);
+    const statuses: Array<[string, boolean | undefined]> = [];
+    const result = await authenticate({ timeout: 120_000, open: true, openDelaySeconds: 3, onStatus: (message, replace) => statuses.push([message, replace]) }, deps);
     expect(result.flow).toBe("browser-login");
     expect(readCookie).toHaveBeenCalledTimes(2);
     expect(statuses).toEqual([
-      "3 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。",
-      "2 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。",
-      "1 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。",
+      ["3 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。", true],
+      ["2 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。", true],
+      ["1 秒后将打开 Google Chrome，请完成蓝湖登录后返回终端。", true],
+      ["", true],
     ]);
     expect(deps.delay).toHaveBeenCalledTimes(3);
     expect(deps.openBrowser).toHaveBeenCalledWith("https://lanhuapp.com/");

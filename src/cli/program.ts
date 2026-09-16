@@ -30,6 +30,15 @@ export function installAuthenticationMessage(flow?: string): string {
   return `${installed}\n下一步：lanhu auth`;
 }
 
+export function importAuthenticationMessage(result: { validation: { expiresAt?: string } }): string {
+  const expires = result.validation.expiresAt ? `\n凭据有效期至：${result.validation.expiresAt}` : "";
+  return `Cookie 已导入并保存，蓝湖登录凭据已就绪。${expires}\n如需重新导入，请再次运行：lanhu auth import`;
+}
+
+export function logoutMessage(removed: boolean): string {
+  return removed ? "CLI 保存的本地蓝湖登录凭据已删除。" : "未找到 CLI 保存的本地蓝湖登录凭据。";
+}
+
 export function timeoutMs(command: Command): number {
   const seconds = Number(globalOptions(command).timeout || "30");
   if (!Number.isFinite(seconds) || seconds <= 0) throw new LanhuError("LANHU_INVALID_ARGUMENT", "--timeout 必须是正数秒值。");
@@ -164,7 +173,7 @@ export function createProgram(): Command {
       const warnings: string[] = [];
       if (options.auth && interactive && await confirmAuthentication()) {
         try {
-          authentication = await authenticate({ timeout: 120_000, open: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
+          authentication = await authenticate({ timeout: 120_000, open: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message, replace) => output.status(message, replace) });
         } catch (error) {
           const normalized = toLanhuError(error);
           warnings.push(`蓝湖登录未完成：${normalized.message}${normalized.hint ? `；${normalized.hint}` : ""}`);
@@ -184,16 +193,22 @@ export function createProgram(): Command {
     .option("--timeout <seconds>", "等待登录秒数", "120")
     .option("--no-open", "不打开浏览器")
     .action(async (options, command) => withOutput(command, "auth", async (output) => {
-      const result = await authenticate({ browser: options.browser, profile: options.profile, timeout: timeoutMs(command), open: options.open, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
+      const result = await authenticate({ browser: options.browser, profile: options.profile, timeout: timeoutMs(command), open: options.open, openDelaySeconds: browserOpenDelay(command), onStatus: (message, replace) => output.status(message, replace) });
       output.success(result, result.warnings, authenticationMessage(result));
     }));
   auth.command("status").description("检查本地凭据状态").action(async (_options, command) => withOutput(command, "auth status", async (output) => output.success(await authStatus())));
-  auth.command("import").description("通过隐藏输入手动导入 Cookie").action(async (_options, command) => withOutput(command, "auth import", async (output) => output.success(await importCredential(await readSecret("粘贴 Cookie（输入不会显示）：")))));
+  auth.command("import").description("通过隐藏输入手动导入 Cookie").action(async (_options, command) => withOutput(command, "auth import", async (output) => {
+    const result = await importCredential(await readSecret("粘贴 Cookie（输入不会显示）："));
+    output.success(result, [], importAuthenticationMessage(result));
+  }));
   auth.command("refresh").description("重新打开浏览器并读取会话").option("--browser <browser>").option("--profile <profile>").option("--timeout <seconds>", "等待登录秒数", "120").action(async (options, command) => withOutput(command, "auth refresh", async (output) => {
-    const result = await authenticate({ browser: options.browser, profile: options.profile, timeout: timeoutMs(command), open: true, forceLogin: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message) => output.status(message) });
+    const result = await authenticate({ browser: options.browser, profile: options.profile, timeout: timeoutMs(command), open: true, forceLogin: true, openDelaySeconds: browserOpenDelay(command), onStatus: (message, replace) => output.status(message, replace) });
     output.success(result, result.warnings, "蓝湖 Cookie 已刷新并保存。");
   }));
-  auth.command("logout").description("删除 CLI 本地凭据").action(async (_options, command) => withOutput(command, "auth logout", async (output) => output.success(await logout())));
+  auth.command("logout").description("删除 CLI 本地凭据").action(async (_options, command) => withOutput(command, "auth logout", async (output) => {
+    const result = await logout();
+    output.success(result, [], logoutMessage(result.removed));
+  }));
 
   program.command("doctor").description("查看本地凭据状态（兼容命令，推荐 auth status）").action(async (_options, command) => withOutput(command, "doctor", async (output) => output.success(await authStatus())));
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { installAuthenticationMessage } from "../src/cli/program.js";
+import { importAuthenticationMessage, installAuthenticationMessage, logoutMessage } from "../src/cli/program.js";
 import { Output } from "../src/cli/output.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -10,6 +10,13 @@ describe("CLI output", () => {
     expect(installAuthenticationMessage("existing-cookie")).toContain("已读取并保存浏览器登录凭据");
     expect(installAuthenticationMessage("browser-login")).toContain("蓝湖登录凭据已保存");
     expect(installAuthenticationMessage()).toContain("下一步：lanhu auth");
+  });
+
+  it("prints friendly import and logout results", () => {
+    expect(importAuthenticationMessage({ validation: { expiresAt: "2027-09-16T07:53:07.000Z" } })).toContain("Cookie 已导入并保存");
+    expect(importAuthenticationMessage({ validation: { expiresAt: "2027-09-16T07:53:07.000Z" } })).toContain("2027-09-16T07:53:07.000Z");
+    expect(logoutMessage(true)).toContain("已删除");
+    expect(logoutMessage(false)).toContain("未找到");
   });
 
   it("prints a friendly message instead of an object in human mode", () => {

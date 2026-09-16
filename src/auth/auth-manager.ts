@@ -68,7 +68,7 @@ export async function authenticate(options: {
   open: boolean;
   forceLogin?: boolean;
   openDelaySeconds?: number;
-  onStatus?: (message: string) => void;
+  onStatus?: (message: string, replace?: boolean) => void;
 }, overrides: Partial<AuthenticationDependencies> = {}) {
   const dependencies: AuthenticationDependencies = {
     readLocal: authStatus,
@@ -128,9 +128,10 @@ export async function authenticate(options: {
   // 仅在本地凭据和现有浏览器登录态都不可用时，才打开登录页面。
   const delaySeconds = Math.max(0, Math.floor(options.openDelaySeconds ?? 0));
   for (let remaining = delaySeconds; remaining > 0; remaining -= 1) {
-    options.onStatus?.(`${remaining} 秒后将打开 ${target.label}，请完成蓝湖登录后返回终端。`);
+    options.onStatus?.(`${remaining} 秒后将打开 ${target.label}，请完成蓝湖登录后返回终端。`, true);
     await dependencies.delay(1_000);
   }
+  if (delaySeconds) options.onStatus?.("", true);
   await dependencies.openBrowser("https://lanhuapp.com/");
   await dependencies.waitForLogin(options.timeout, target.label);
   try {

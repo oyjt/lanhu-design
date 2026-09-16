@@ -1,3 +1,4 @@
+import { clearLine, cursorTo } from "node:readline";
 import { redactSecrets } from "../auth/cookie.js";
 import { toLanhuError } from "../errors/lanhu-error.js";
 
@@ -7,8 +8,15 @@ export class Output {
   private readonly startedAt = Date.now();
   constructor(private readonly command: string, private readonly version: string, private readonly options: OutputOptions) {}
 
-  status(message: string): void {
-    if (!this.options.json && !this.options.quiet) process.stderr.write(`${redactSecrets(message)}\n`);
+  status(message: string, replace = false): void {
+    if (this.options.json || this.options.quiet) return;
+    if (replace) {
+      cursorTo(process.stderr, 0);
+      clearLine(process.stderr, 0);
+      if (message) process.stderr.write(redactSecrets(message));
+      return;
+    }
+    process.stderr.write(`${redactSecrets(message)}\n`);
   }
 
   success(data: unknown, warnings: string[] = [], humanMessage?: string): void {
