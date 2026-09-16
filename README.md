@@ -41,12 +41,6 @@ npx lanhu-design@latest install
 lanhu --version
 ```
 
-如果只需要在终端使用 CLI、不需要 Agent Skill，可以单独安装：
-
-```bash
-npm install -g lanhu-design
-```
-
 ### 2. 登录蓝湖
 
 如果已经在安装向导中完成登录，可以跳过这一步；否则执行：
@@ -224,7 +218,7 @@ lanhu doctor --json
 
 ## Agent Skill
 
-Agent Skill 为 AI 编码助手提供蓝湖任务的识别规则、操作流程和设计还原规范。仅安装 CLI 时，Agent 可以执行 `lanhu` 命令，但不会自动读取这些规则。
+Agent Skill 为 AI 编码助手提供蓝湖任务的识别规则、操作流程和设计还原规范。
 
 推荐使用安装向导，一次安装 CLI 和全局 Agent Skill：
 
@@ -239,7 +233,7 @@ npx lanhu-design@latest install --no-auth
 lanhu auth
 ```
 
-如已安装 CLI，只需要补装 Skill，可以执行：
+如果只需要 Agent Skill，可以单独安装：
 
 ```bash
 npx skills add oyjt/lanhu-design -y -g
