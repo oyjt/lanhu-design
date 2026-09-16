@@ -1,6 +1,6 @@
 {
   "name": "lanhu-design",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "蓝湖设计稿读取、规格提取与切图下载 CLI 和 Agent Skill",
   "type": "module",
   "bin": { "lanhu": "dist/cli.js" },
