@@ -61,5 +61,5 @@ pnpm pack --dry-run
 
 - 使用语义化版本。
 - npm 包名为 `lanhu-design`，二进制命令为 `lanhu`。
-- `v*` 标签必须与 `package.json` 版本一致，标签推送后由 `.github/workflows/publish.yml` 发布。
+- `v*` 标签必须与 `package.json` 版本一致；标签推送后由 `.github/workflows/publish.yml` 发布 npm 包，并在发布成功后创建 GitHub Release。
 - 不手动绕过 CI 或在验证失败时发布。
