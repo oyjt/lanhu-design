@@ -12,9 +12,13 @@ interface AuthenticationDependencies {
   readCookie: typeof readLanhuBrowserCookie;
   openBrowser: typeof openDefaultBrowser;
   waitForLogin: typeof waitForLogin;
+  delay: (milliseconds: number) => Promise<void>;
+  platform: NodeJS.Platform;
   verify: typeof verifyCredential;
   write: typeof writeCredential;
 }
+
+const delay = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
 async function waitForLogin(timeout: number, browser: string): Promise<void> {
   if (!process.stdin.isTTY) return;
@@ -42,12 +46,27 @@ export function keychainReadNotice(target: { backend: string; label: string }, p
   return `即将读取 ${target.label} 登录态，macOS 可能弹出钥匙串授权窗口。这是解密浏览器 Cookie 所需的系统授权，请选择“允许”或“始终允许”。`;
 }
 
+function browserLoginFailure(target: { backend: string; label: string }, platform: NodeJS.Platform, cause: LanhuError): LanhuError {
+  const profileHint = `请确认蓝湖登录在当前 ${target.label} Profile；如果使用其他 Profile，请通过 --profile 指定。`;
+  const windowsHint = platform === "win32" && ["chrome", "edge"].includes(target.backend)
+    ? "Windows 版 Chromium 浏览器可能限制 Cookie 解密，可改用 Firefox，或运行：lanhu auth import"
+    : "也可以运行：lanhu auth import";
+  return new LanhuError(
+    "LANHU_AUTH_REQUIRED",
+    `已打开 ${target.label}，但仍未读取到 lanhuapp.com 登录状态。`,
+    `${profileHint}${windowsHint}`,
+    true,
+    { cause },
+  );
+}
+
 export async function authenticate(options: {
   browser?: string;
   profile?: string;
   timeout: number;
   open: boolean;
   forceLogin?: boolean;
+  openDelaySeconds?: number;
   onStatus?: (message: string) => void;
 }, overrides: Partial<AuthenticationDependencies> = {}) {
   const dependencies: AuthenticationDependencies = {
@@ -56,6 +75,8 @@ export async function authenticate(options: {
     readCookie: readLanhuBrowserCookie,
     openBrowser: openDefaultBrowser,
     waitForLogin,
+    delay,
+    platform: process.platform,
     verify: verifyCredential,
     write: writeCredential,
     ...overrides,
@@ -75,7 +96,7 @@ export async function authenticate(options: {
 
   const attempt = async (flow: "existing-cookie" | "browser-login") => {
     // 每次可能访问 Keychain 前先告知用户，避免系统授权窗口突然出现。
-    const notice = keychainReadNotice(target);
+    const notice = keychainReadNotice(target, dependencies.platform);
     if (notice) options.onStatus?.(notice);
     const result = await dependencies.readCookie({ ...options, target });
     const cookie = normalizeCookie(result.cookie);
@@ -104,9 +125,21 @@ export async function authenticate(options: {
     throw new LanhuError("LANHU_AUTH_REQUIRED", "当前没有可用的蓝湖浏览器登录态。", "移除 --no-open 后重试，或运行：lanhu auth import");
   }
   // 仅在本地凭据和现有浏览器登录态都不可用时，才打开登录页面。
+  const delaySeconds = Math.max(0, Math.floor(options.openDelaySeconds ?? 0));
+  for (let remaining = delaySeconds; remaining > 0; remaining -= 1) {
+    options.onStatus?.(`${remaining} 秒后将打开 ${target.label}，请完成蓝湖登录后返回终端。`);
+    await dependencies.delay(1_000);
+  }
   await dependencies.openBrowser("https://lanhuapp.com/");
   await dependencies.waitForLogin(options.timeout, target.label);
-  return attempt("browser-login");
+  try {
+    return await attempt("browser-login");
+  } catch (error) {
+    if (error instanceof LanhuError && error.code === "LANHU_AUTH_REQUIRED") {
+      throw browserLoginFailure(target, dependencies.platform, error);
+    }
+    throw error;
+  }
 }
 
 export async function importCredential(cookieInput: string) {

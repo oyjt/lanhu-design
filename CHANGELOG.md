@@ -2,6 +2,10 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## Unreleased
+
+- 优化浏览器认证提示：打开浏览器前显示 3 秒倒计时；Windows 读取失败时明确引导指定 Profile、改用 Firefox 或手动导入 Cookie。
+
 ## 1.4.0 - 2026-09-15
 
 - 新增 `lanhu` CLI，支持认证登录、环境诊断、设计稿查询、规格与切图获取、资源下载和导出。

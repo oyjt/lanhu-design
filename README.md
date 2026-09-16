@@ -36,7 +36,7 @@ lanhu --version
 lanhu auth
 ```
 
-CLI 会优先复用已有凭据。没有可用凭据时，将读取默认浏览器登录状态；如果浏览器尚未登录，则会打开蓝湖登录页并等待你完成登录。
+CLI 会优先复用已有凭据。没有可用凭据时，将读取默认浏览器登录状态；如果浏览器尚未登录，CLI 会先显示 3 秒倒计时，再打开蓝湖登录页并等待你完成登录。
 
 macOS 从 Chrome、Edge 等 Chromium 浏览器读取登录状态时，系统可能显示钥匙串授权窗口。CLI 会在弹窗出现前说明用途，请根据需要选择“允许”或“始终允许”。
 
@@ -277,7 +277,13 @@ lanhu auth --browser chrome --profile "Profile 1"
 
 ### Windows 无法读取 Chrome 或 Edge Cookie
 
-新版 Chromium 可能使用 App-Bound Encryption，普通进程无法解密。可以改用 Firefox 登录，或执行 `lanhu auth import`。
+如果浏览器已经登录但 CLI 仍然无法读取，请先确认登录所在的 Profile，必要时显式指定：
+
+```powershell
+lanhu auth --browser edge --profile "Profile 1"
+```
+
+新版 Chromium 可能使用 App-Bound Encryption，普通进程无法解密。此时可以改用 Firefox 登录，或执行 `lanhu auth import`。认证失败时，CLI 也会直接给出这两种兜底方式。
 
 ### 登录状态失效
 
