@@ -23,14 +23,33 @@
 
 ## 快速开始
 
-### 1. 安装 CLI（推荐）
+### 1. 安装（推荐）
 
 ```bash
-npm install -g lanhu-design
+npx lanhu-design@latest install
+```
+
+安装向导会自动：
+
+1. 安装或升级全局 `lanhu` CLI。
+2. 安装全局 Agent Skill，使 Claude Code、Codex CLI、Cursor 等工具可以发现并使用蓝湖能力。
+3. 询问是否立即登录蓝湖。
+
+安装完成后可以检查 CLI：
+
+```bash
 lanhu --version
 ```
 
+如果只需要在终端使用 CLI、不需要 Agent Skill，可以单独安装：
+
+```bash
+npm install -g lanhu-design
+```
+
 ### 2. 登录蓝湖
+
+如果已经在安装向导中完成登录，可以跳过这一步；否则执行：
 
 ```bash
 lanhu auth
@@ -205,23 +224,24 @@ lanhu doctor --json
 
 ## Agent Skill
 
-如果希望 Claude Code、Codex CLI、Cursor 等 AI 编码助手自动调用蓝湖工具，推荐使用安装向导，一次安装 CLI 和 Agent Skill：
+Agent Skill 为 AI 编码助手提供蓝湖任务的识别规则、操作流程和设计还原规范。仅安装 CLI 时，Agent 可以执行 `lanhu` 命令，但不会自动读取这些规则。
+
+推荐使用安装向导，一次安装 CLI 和全局 Agent Skill：
 
 ```bash
 npx lanhu-design@latest install
 ```
 
-安装完成后，向导会询问是否立即登录蓝湖。也可以跳过询问，稍后手动登录：
+如需跳过登录询问，可以执行：
 
 ```bash
 npx lanhu-design@latest install --no-auth
 lanhu auth
 ```
 
-如需分别安装，可执行：
+如已安装 CLI，只需要补装 Skill，可以执行：
 
 ```bash
-npm install -g lanhu-design
 npx skills add oyjt/lanhu-design -y -g
 ```
 
