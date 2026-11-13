@@ -2,7 +2,7 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
-## Unreleased
+## 1.4.3 - 2026-11-13
 
 - 修复 PS（`type: ps`）设计稿调用 `lanhu slices` / `lanhu download` 必定失败：索引图层用的具名函数表达式 `indexPs` 越出自身作用域，`sketchData.info` 非空时抛 `ReferenceError: indexPs is not defined`。改为函数声明后，`board` 与 `info` 两棵图层树都会建索引。
 - 扩展自检：PS 镜头同时提供 `board.layers` 与 `info[]` 图层树，验证嵌套切图能被正确索引。
