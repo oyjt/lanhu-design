@@ -331,13 +331,14 @@ function extractPhotoshopSlices(sketchData, slices, seenSlices, includeMetadata)
   if (!Array.isArray(sketchData.assets)) return;
 
   const byId = new Map();
-  (function indexPs(obj) {
+  function indexPs(obj) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
     if (obj.id != null) byId.set(obj.id, obj);
     for (const key of ["layers", "children"]) {
       for (const child of obj[key] || []) indexPs(child);
     }
-  })(sketchData.board);
+  }
+  indexPs(sketchData.board);
   for (const section of sketchData.info || []) indexPs(section);
 
   for (const asset of sketchData.assets) {

@@ -342,6 +342,27 @@ async function checkPhotoshopSlices() {
             },
           ],
         },
+        // 真实 PS 稿的图层树挂在 info[] 下（board 只是同一画板的副本），
+        // 两者都要能被索引到；info 非空时曾因 indexPs 越出作用域直接抛错。
+        info: [
+          {
+            id: "S1",
+            name: "Section",
+            type: "artboardSection",
+            layers: [
+              {
+                id: "L3",
+                name: "icon_star",
+                type: "layer",
+                left: 30,
+                top: 40,
+                width: 60,
+                height: 60,
+                images: { png_xxxhd: "https://cdn.test/star.png" },
+              },
+            ],
+          },
+        ],
         assets: [
           { id: "L1", name: "btn_bg", isAsset: true, scaleType: 2 },
           { id: "L2" },
@@ -358,7 +379,7 @@ async function checkPhotoshopSlices() {
       "https://lanhuapp.com/web/#/item/project/stage?pid=p1&tid=t1",
       "1",
     );
-    assert.equal(result.total_slices, 1);
+    assert.equal(result.total_slices, 2);
     const slice = result.slices[0];
     assert.equal(slice.id, "L1");
     assert.equal(slice.download_url, "https://cdn.test/btn.png");
@@ -371,6 +392,13 @@ async function checkPhotoshopSlices() {
     assert.match(slice.scale_urls["3x"], /w_300,h_120/);
     assert.match(slice.scale_urls.android_hdpi, /w_150,h_60/);
     assert.equal(slice.logical_size.width, 100);
+
+    // info[] 下的图层同样被索引，位置与切图地址正确。
+    const nested = result.slices[1];
+    assert.equal(nested.id, "L3");
+    assert.equal(nested.download_url, "https://cdn.test/star.png");
+    assert.deepEqual(nested.position, { x: 30, y: 40 });
+    assert.equal(nested.size, "60x60");
   } finally {
     globalThis.fetch = originalFetch;
   }

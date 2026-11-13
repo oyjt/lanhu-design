@@ -2,6 +2,11 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)；版本以 git tag（`v*`）形式发布，安装/更新时可指定 tag 锁定版本。
 
+## Unreleased
+
+- 修复 PS（`type: ps`）设计稿调用 `lanhu slices` / `lanhu download` 必定失败：索引图层用的具名函数表达式 `indexPs` 越出自身作用域，`sketchData.info` 非空时抛 `ReferenceError: indexPs is not defined`。改为函数声明后，`board` 与 `info` 两棵图层树都会建索引。
+- 扩展自检：PS 镜头同时提供 `board.layers` 与 `info[]` 图层树，验证嵌套切图能被正确索引。
+
 ## 1.4.2 - 2026-09-16
 
 - 优化 Agent Skill 安装：一键安装保持全局、非交互行为并隐藏 PromptScript 兼容性提示；单独安装 Skill 时由用户选择目标与范围。
